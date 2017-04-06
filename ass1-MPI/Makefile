@@ -1,12 +1,13 @@
 SRCS=$(wildcard *.c)
 BINS=$(SRCS:%.c=%)
 
-CFLAGS=-Wall
+MPICC=/opt/mpich/bin/mpicc
+CFLAGS=-Wall -g
 
 all: $(BINS) 
 
 $(BINS): %: %.c
-	mpicc -o $@ $(CFLAGS) $<
+	$(MPICC) -o $@ $(CFLAGS) $<
 
 clean:
 	rm -f $(BINS)
