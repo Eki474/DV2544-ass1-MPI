@@ -33,7 +33,7 @@ MPI_Status status;
 static double a[SIZE][SIZE];
 static double b[SIZE][SIZE];
 static double c[SIZE][SIZE];
-static double d[SIZE][SIZE];
+static double d[SIZE][SIZE]; /* Result matrix buffer */
 
 static void
 init_matrix(void)
@@ -57,6 +57,7 @@ init_matrix(void)
         }
 }
 
+/* Transpose matrix B */
 static void
 transpose_second_matrix(void)
 {
@@ -71,7 +72,7 @@ transpose_second_matrix(void)
         }
     }
 }
-
+/* Print result matrix C */
 static void
 print_matrix(void)
 {
@@ -84,6 +85,7 @@ print_matrix(void)
     }
 }
 
+/* Calculate C = A*B (assuming that B is transposed!) */
 static void
 matrix_mult(int offset_row, int offset_col, int num_rows, int num_cols)
 {
@@ -170,13 +172,12 @@ main(int argc, char **argv)
 
         }
 
-        /* let master do its part of the work - TODO */
+        /* let master do its part of the work */
         matrix_mult(0, 0, num_rows, num_cols);
 
         end_time1 = MPI_Wtime();
-        printf("multiplication time: %f\n", end_time1 - start_time);
 
-        /* collect the results from all the workers - TODO */
+        /* collect the results from all the workers */
         mtype = FROM_WORKER;
         for (src = 1; src < nproc; src++) {
             MPI_Recv(&offset_row, 1, MPI_INT, src, mtype, MPI_COMM_WORLD, &status);
@@ -184,7 +185,8 @@ main(int argc, char **argv)
             MPI_Recv(&num_rows, 1, MPI_INT, src, mtype, MPI_COMM_WORLD, &status);
             MPI_Recv(&num_cols, 1, MPI_INT, src, mtype, MPI_COMM_WORLD, &status);
             MPI_Recv(&d[0][0], SIZE*SIZE, MPI_DOUBLE, src, mtype, MPI_COMM_WORLD, &status);
-            /* Copy data in correct place */
+
+            /* Copy data in correct place since we received the whole matrix :( */
             for (i = offset_row; i < (offset_row + num_rows); i++) {
                 for (j = offset_col; j < (offset_col + num_cols); j++) {
                     c[i][j] = d[i][j];
@@ -196,12 +198,13 @@ main(int argc, char **argv)
         }
 
         end_time2 = MPI_Wtime();
+
         if (DEBUG)
         {
             /* Prints the resulting matrix c */
             print_matrix();
         }
-        printf("Execution time on %2d nodes: %f (gathering results: %f)\n", nproc, end_time2 - start_time, end_time2 - end_time1);
+        printf("Execution time on %2d nodes: %f (multiplication: %f, gathering results: %f)\n", nproc, end_time2 - start_time, end_time1 - start_time, end_time2 - end_time1);
 
     } else {    /* Worker tasks */
         /* Receive data from master */
@@ -220,14 +223,14 @@ main(int argc, char **argv)
             printf ("Rank=%d, offset_row=%d, offset_col=%d, num_rows=%d, num_cols=%d, a[offset_row][0]=%f, b[offset_col][0]=%f\n",
                 myrank, offset_row, offset_col, num_rows, num_cols, a[offset_row][0], b[offset_row][0]);
 
-        /* do the workers part of the calculation - TODO */
+        /* do the workers part of the calculation */
         matrix_mult(offset_row, offset_col, num_rows, num_cols);
 
         if (DEBUG)
             printf("Rank=%d, offset=%d, row =%d, c[offset][0]=%e\n",
                 myrank, offset_row, num_rows, c[offset_row][0]);
 
-        /* send the results to the master - TODO */
+        /* send the results to the master - This sends the whole result matrix :( */
         mtype = FROM_WORKER;
         MPI_Send(&offset_row, 1, MPI_INT, 0, mtype, MPI_COMM_WORLD);
         MPI_Send(&offset_col, 1, MPI_INT, 0, mtype, MPI_COMM_WORLD);
