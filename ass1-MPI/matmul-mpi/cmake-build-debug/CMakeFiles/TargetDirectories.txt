@@ -1,0 +1,3 @@
+/home/eki/Documents/BTH/multiprocessor_systems/ass1-MPI/matmul-mpi/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+/home/eki/Documents/BTH/multiprocessor_systems/ass1-MPI/matmul-mpi/cmake-build-debug/CMakeFiles/edit_cache.dir
+/home/eki/Documents/BTH/multiprocessor_systems/ass1-MPI/matmul-mpi/cmake-build-debug/CMakeFiles/matmul_mpi.dir

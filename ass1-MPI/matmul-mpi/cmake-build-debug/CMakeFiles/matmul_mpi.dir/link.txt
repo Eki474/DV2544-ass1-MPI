@@ -1,0 +1,1 @@
+/usr/bin/cc  -g   CMakeFiles/matmul_mpi.dir/main.c.o  -o matmul_mpi 
