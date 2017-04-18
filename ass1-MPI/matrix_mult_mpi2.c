@@ -35,6 +35,7 @@ static double b[SIZE][SIZE];
 static double c[SIZE][SIZE];
 static double d[SIZE][SIZE]; /* Result matrix buffer */
 
+/* Initialize A and B matrices */
 static void
 init_matrix(void)
 {
@@ -57,7 +58,7 @@ init_matrix(void)
         }
 }
 
-/* Transpose matrix B */
+/* Transpose B matrix so it's in column-major order */
 static void
 transpose_second_matrix(void)
 {
@@ -72,6 +73,7 @@ transpose_second_matrix(void)
         }
     }
 }
+
 /* Print result matrix C */
 static void
 print_matrix(void)
@@ -117,6 +119,7 @@ main(int argc, char **argv)
     MPI_Comm_size(MPI_COMM_WORLD, &nproc);
     MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
 
+    /* Check that the number of cores given "makes sense" */
     if (nproc % 4 != 0 && nproc != 1 && nproc != 2)
     {
         printf("Program was given %d cores, but execution only makes sense with 1, 2, or multiples of 4 cores!\n", nproc);
@@ -145,7 +148,7 @@ main(int argc, char **argv)
             nprocleft /= 2;
         }
 
-        /* Send part of matrix a and part of matrix b to workers */
+        /* Send data to workers */
         mtype = FROM_MASTER;
         offset_row = 0;
         offset_col = num_cols;
@@ -153,16 +156,19 @@ main(int argc, char **argv)
         for (dest = 1; dest < nproc; dest++) {
             if (DEBUG)
                 printf("   sending %d rows and %d columns to task %d\n",num_rows,num_cols,dest);
-
+            /* Offset (starting) row and column */
             MPI_Send(&offset_row, 1, MPI_INT, dest, mtype, MPI_COMM_WORLD);
             MPI_Send(&offset_col, 1, MPI_INT, dest, mtype, MPI_COMM_WORLD);
 
+            /* Number of rows and columns to compute */
             MPI_Send(&num_rows, 1, MPI_INT, dest, mtype, MPI_COMM_WORLD);
             MPI_Send(&num_cols, 1, MPI_INT, dest, mtype, MPI_COMM_WORLD);
 
+            /* Required rows and columns */
             MPI_Send(&a[offset_row][0], num_rows*SIZE, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
             MPI_Send(&b[offset_col][0], num_cols*SIZE, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
 
+            /* Advance offsets */
             offset_col += num_cols;
             if (offset_col >= SIZE)
             {
@@ -184,9 +190,10 @@ main(int argc, char **argv)
             MPI_Recv(&offset_col, 1, MPI_INT, src, mtype, MPI_COMM_WORLD, &status);
             MPI_Recv(&num_rows, 1, MPI_INT, src, mtype, MPI_COMM_WORLD, &status);
             MPI_Recv(&num_cols, 1, MPI_INT, src, mtype, MPI_COMM_WORLD, &status);
+            /* Receive the *whole* result matrix, store in D buffer matrix */
             MPI_Recv(&d[0][0], SIZE*SIZE, MPI_DOUBLE, src, mtype, MPI_COMM_WORLD, &status);
 
-            /* Copy data in correct place since we received the whole matrix :( */
+            /* Copy the relevant part of the data in correct place */
             for (i = offset_row; i < (offset_row + num_rows); i++) {
                 for (j = offset_col; j < (offset_col + num_cols); j++) {
                     c[i][j] = d[i][j];
