@@ -21,7 +21,7 @@
 #include <stdlib.h>
 #include <mpi.h>
 
-#define SIZE 8	/* assumption: SIZE a multiple of number of nodes */
+#define SIZE 1024	/* assumption: SIZE a multiple of number of nodes */
         /* SIZE should be 1024 in our measurements in the assignment */
         /* Hint: use small sizes when testing, e.g., SIZE 8 */
 #define FROM_MASTER 1	/* setting a message type */
@@ -69,17 +69,6 @@ transp_matrix(void) {
     }
 }
 
-
-/*
- * i=0,i<offset rows,i++
- * j=0, j<offset col,j++
- *
- *
- *
- *
- * TO DO
- * from offset to offset+size V.
- */
  static void
  multi_offset(int offset_row, int rowSize, int offset_col, int colSize){
  		 for(int i=offset_row;i<offset_row+rowSize;i++){
@@ -113,22 +102,6 @@ print_matrix(void)
     printf("\n\nEND\n");
 }
 
-//
-// static void
-// print_test()
-// {
-//     int i, j;
-//       for (i = 0; i < SIZE; i++)
-//       {
-//         for (j = 0; j < SIZE; j++)
-//         {
-//             printf(" %7.2f", d[i][j]);
-//         }
-//         printf("\n");
-//       }
-//       printf("\n\n");
-// }
-
 int
 main(int argc, char **argv)
 {
@@ -143,7 +116,9 @@ main(int argc, char **argv)
     MPI_Comm_size(MPI_COMM_WORLD, &nproc);
     MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
 
-    if (myrank == 0) {    /* Master task */
+    /* MASTER TASK */
+
+    if (myrank == 0) {
         /* Initialization */
         printf("SIZE = %d, number of nodes = %d\n", SIZE, nproc);
         init_matrix();
@@ -172,65 +147,43 @@ main(int argc, char **argv)
             {
                 printf("   Sending \noffset_rows : %d, offset_cols : %d , rows : %d, cols %d to task %d\n",offset_rows,offset_cols,rows_node,cols_node,dest);
                 printf("   a[offset_rows][0] : %f, b[offset_cols][0] : %f\n",a[offset_rows][0],b[offset_cols][0]);
-
             }
-
             if(offset_rows<SIZE-rows_node)  offset_rows+=rows_node;
             else {
             	offset_rows=0;
             	offset_cols+=cols_node;
             }
-
+            if(DEBUG)
+            {
             printf("Offset Rows %d\n", offset_rows);
             printf("Offset Cols %d\n", offset_cols);
-
+            }
             MPI_Send(&offset_rows, 1, MPI_INT, dest, mtype, MPI_COMM_WORLD);
             MPI_Send(&offset_cols, 1, MPI_INT, dest, mtype, MPI_COMM_WORLD);
             MPI_Send(&rows_node, 1, MPI_INT, dest, mtype, MPI_COMM_WORLD);
             MPI_Send(&cols_node, 1, MPI_INT, dest, mtype, MPI_COMM_WORLD);
             MPI_Send(&a[offset_rows][0], rows_node*SIZE, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
             MPI_Send(&b[offset_cols][0], cols_node*SIZE, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
-
-
-
         }
 
-
-        /* let master do its part of the work
-        for (i = 0; i < rows; i++) {
-            for (j = 0; j < SIZE; j++) {
-                c[i][j] = 0.0;
-                for (k = 0; k < SIZE; k++)
-                    c[i][j] = c[i][j] + a[i][k] * b[k][j];
-            }
-        }*/
         multi_offset(0,rows_node,0,cols_node);
-        /*printf("Master\n");
-        print_matrix();*/
         if(DEBUG) printf("\n\nPASS Before Worker\n\n");
 
-        /* collect the results from all the workers */
+        /* Collect the results from all the workers */
         mtype = FROM_WORKER;
         for (src = 1; src < nproc; src++) {
+            /* Receive info from worker*/
             MPI_Recv(&offset_rows, 1, MPI_INT, src, mtype, MPI_COMM_WORLD, &status);
             MPI_Recv(&offset_cols, 1, MPI_INT, src, mtype, MPI_COMM_WORLD, &status);
             MPI_Recv(&rows_node, 1, MPI_INT, src, mtype, MPI_COMM_WORLD, &status);
             MPI_Recv(&cols_node, 1, MPI_INT, src, mtype, MPI_COMM_WORLD, &status);
-            /* Receive info from worker (use array or something else)
-             */
             MPI_Recv(d, SIZE*SIZE, MPI_DOUBLE, src, mtype, MPI_COMM_WORLD, &status);
-            // printf("\nBefore update c matrix\n");
-            // print_matrix();
             editResult();
-            /*printf("\nAfter update c matrix\n");*/
             if (DEBUG)
                 printf("   Recvd %d rows %d cols from task %d, offset_rows = %d, offset_cols = %d\n", rows_node, cols_node, src, offset_rows, offset_cols);
         }
-
         end_time = MPI_Wtime();
-        print_matrix();
-        if (DEBUG)
-            /* Prints the resulting matrix c */
+        if (DEBUG)  print_matrix();/* Prints the resulting matrix c */
         printf("Execution time on %2d nodes: %f\n", nproc, end_time-start_time);
 
     } else {    /* Worker tasks */
@@ -255,13 +208,7 @@ main(int argc, char **argv)
             printf ("Rank=%d, offsetCols=%d, col =%d, b[0][offsetCol]=%f \n",
                 myrank, offset_cols, cols_node, b[offset_cols][0]);
         }
-        /* do the workers part of the calculation */
-        /*for (i=offset_rows; i<offset_rows+rows_node; i++)
-            for (j=0; j<SIZE; j++) {
-                c[i][j] = 0.0;
-                for (k=0; k<SIZE; k++)
-                    c[i][j] = c[i][j] + a[i][k] * b[k][j];
-            }*/
+
         multi_offset(offset_rows,rows_node,offset_cols,cols_node);
 
         if (DEBUG)
@@ -270,7 +217,7 @@ main(int argc, char **argv)
             printf("Rank=%d, offset_rows=%d, rows_node =%d, offset_cols=%d, cols_node=%d, c[offset][offset]=%f\n",
                 myrank, offset_rows, rows_node, offset_cols, cols_node, c[offset_rows][offset_cols]);
         }
-        /* send the results to the master */
+        /* Send the results to the master */
         mtype = FROM_WORKER;
         MPI_Send(&offset_rows, 1, MPI_INT, 0, mtype, MPI_COMM_WORLD);
         MPI_Send(&offset_cols, 1, MPI_INT, 0, mtype, MPI_COMM_WORLD);
