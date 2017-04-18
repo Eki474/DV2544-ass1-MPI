@@ -14,7 +14,9 @@
 
 /*
  * Compile with:
- * mpicc -o mm matmul_mpi.c
+ * mpicc ./matmulMPI.c -o [Name of executable]
+ * Run with:
+ * mpirun -n [Number of cores(This case should be tested with: 1,2,4,8)] ./[Name of executable] 
  */
 
 #include <stdio.h>
