@@ -11,6 +11,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <malloc.h>
+#include <float.h>
 
 #define MAX_SIZE 4096
 #define EVEN_TURN 0 /* shall we calculate the 'red' or the 'black' elements */
@@ -78,7 +79,7 @@ work()
 		}
 	    }
 	    /* Calculate the maximum sum of the elements */
-	    maxi = -999999.0;
+	    maxi = DBL_MIN;
 	    for (m = 1; m < N+1; m++) {
 		sum = 0.0;
 		for (n = 1; n < N+1; n++)
@@ -107,7 +108,7 @@ work()
 		}
 	    }
 	    /* Calculate the maximum sum of the elements */
-	    maxi = -999999.0;
+	    maxi = DBL_MIN;
 	    for (m = 1; m < N+1; m++) {
 		sum = 0.0;
 		for (n = 1; n < N+1; n++)
