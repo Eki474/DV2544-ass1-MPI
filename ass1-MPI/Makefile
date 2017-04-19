@@ -1,7 +1,7 @@
 SRCS=$(wildcard *.c)
 BINS=$(SRCS:%.c=%)
 
-MPICC=/opt/mpich/bin/mpicc
+MPICC=mpicc
 CFLAGS=-Wall -g -O3
 
 all: $(BINS) 

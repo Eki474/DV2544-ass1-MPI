@@ -10,7 +10,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6604d642-2aeb-4f2b-8ee5-bc9fe21ffa79" name="Default" comment="">
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../Makefile" afterPath="$PROJECT_DIR$/../Makefile" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../laplace_sor_mpi.c" afterPath="$PROJECT_DIR$/../laplace_sor_mpi.c" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="$PROJECT_DIR$/cmake-build-debug/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -26,18 +28,8 @@
       <file leaf-file-name="matrix_mult_mpi.c" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/../matrix_mult_mpi.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="0">
-              <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="laplace_sor_mpi.c" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/../laplace_sor_mpi.c">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-18">
-              <caret line="68" column="0" lean-forward="true" selection-start-line="68" selection-start-column="0" selection-end-line="68" selection-end-column="0" />
+            <state relative-caret-position="216">
+              <caret line="30" column="0" lean-forward="false" selection-start-line="30" selection-start-column="0" selection-end-line="30" selection-end-column="18" />
               <folding />
             </state>
           </provider>
@@ -46,9 +38,23 @@
       <file leaf-file-name="laplace_sor_seq.c" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/../laplace_sor_seq.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="3834">
-              <caret line="213" column="16" lean-forward="true" selection-start-line="213" selection-start-column="16" selection-end-line="213" selection-end-column="16" />
+            <state relative-caret-position="1494">
+              <caret line="83" column="26" lean-forward="false" selection-start-line="83" selection-start-column="19" selection-end-line="83" selection-end-column="26" />
               <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="laplace_sor_mpi.c" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/../laplace_sor_mpi.c">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="72">
+              <caret line="25" column="14" lean-forward="true" selection-start-line="25" selection-start-column="14" selection-end-line="25" selection-end-column="14" />
+              <folding>
+                <element signature="e#7950#9951#0" expanded="false" />
+                <element signature="e#9953#10183#0" expanded="false" />
+                <element signature="e#10526#12942#0" expanded="false" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -57,8 +63,15 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
+      <find>status</find>
+      <find>recv</find>
+      <find>MAX_SIZE</find>
       <find>maxi</find>
+      <find>Print</find>
     </findStrings>
+    <replaceStrings>
+      <replace>glob-&gt;N</replace>
+    </replaceStrings>
   </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../.." />
@@ -344,12 +357,13 @@
       <workItem from="1492513096580" duration="649000" />
       <workItem from="1492515139558" duration="89000" />
       <workItem from="1492515853881" duration="3832000" />
-      <workItem from="1492607205811" duration="527000" />
+      <workItem from="1492607205811" duration="1701000" />
+      <workItem from="1492608972531" duration="7072000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="5760000" />
+    <option name="totallyTimeSpent" value="14006000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="27" width="1366" height="741" extended-state="6" />
@@ -357,8 +371,9 @@
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.24963397" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="CMake" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3306581" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="CMake" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.33226323" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
@@ -371,7 +386,6 @@
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
@@ -382,10 +396,40 @@
     <option name="myLimit" value="2678400000" />
   </component>
   <component name="XDebuggerManager">
-    <breakpoint-manager />
+    <breakpoint-manager>
+      <option name="time" value="5" />
+    </breakpoint-manager>
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
+    <entry file="file://$PROJECT_DIR$/../matrix_mult_mpi.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2844">
+          <caret line="158" column="19" lean-forward="true" selection-start-line="158" selection-start-column="4" selection-end-line="158" selection-end-column="19" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../laplace_sor_seq.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="3834">
+          <caret line="213" column="16" lean-forward="true" selection-start-line="213" selection-start-column="16" selection-end-line="213" selection-end-column="16" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../laplace_sor_mpi.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="4590">
+          <caret line="255" column="37" lean-forward="false" selection-start-line="255" selection-start-column="37" selection-end-line="255" selection-end-column="37" />
+          <folding>
+            <element signature="e#7950#9951#0" expanded="false" />
+            <element signature="e#9953#10183#0" expanded="false" />
+            <element signature="e#10526#12942#0" expanded="false" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/../matrix_mult_mpi.c">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
@@ -398,7 +442,11 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
+          <folding>
+            <element signature="e#7950#9951#0" expanded="false" />
+            <element signature="e#9953#10183#0" expanded="false" />
+            <element signature="e#10526#12942#0" expanded="false" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -439,27 +487,31 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/CMakeLists.txt" />
     <entry file="file://$PROJECT_DIR$/main.c" />
-    <entry file="file://$PROJECT_DIR$/../laplace_sor_seq.c">
+    <entry file="file://$PROJECT_DIR$/../matrix_mult_mpi.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3834">
-          <caret line="213" column="16" lean-forward="true" selection-start-line="213" selection-start-column="16" selection-end-line="213" selection-end-column="16" />
+        <state relative-caret-position="216">
+          <caret line="30" column="0" lean-forward="false" selection-start-line="30" selection-start-column="0" selection-end-line="30" selection-end-column="18" />
           <folding />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../matrix_mult_mpi.c">
+    <entry file="file://$PROJECT_DIR$/../laplace_sor_seq.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        <state relative-caret-position="1494">
+          <caret line="83" column="26" lean-forward="false" selection-start-line="83" selection-start-column="19" selection-end-line="83" selection-end-column="26" />
           <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/../laplace_sor_mpi.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-18">
-          <caret line="68" column="0" lean-forward="true" selection-start-line="68" selection-start-column="0" selection-end-line="68" selection-end-column="0" />
-          <folding />
+        <state relative-caret-position="72">
+          <caret line="25" column="14" lean-forward="true" selection-start-line="25" selection-start-column="14" selection-end-line="25" selection-end-column="14" />
+          <folding>
+            <element signature="e#7950#9951#0" expanded="false" />
+            <element signature="e#9953#10183#0" expanded="false" />
+            <element signature="e#10526#12942#0" expanded="false" />
+          </folding>
         </state>
       </provider>
     </entry>

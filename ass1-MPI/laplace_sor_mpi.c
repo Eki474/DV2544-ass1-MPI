@@ -11,12 +11,19 @@
 #include <stdlib.h>
 #include <math.h>
 #include <malloc.h>
+#include <float.h>
+#include <mpi.h>
+#include <assert.h>
 
 #define MAX_SIZE 4096
 #define EVEN_TURN 0 /* shall we calculate the 'red' or the 'black' elements */
 #define ODD_TURN  1
+#define FROM_MASTER 1	/* setting a message type */
+#define FROM_WORKER 2	/* setting a message type */
 
-typedef double matrix[MAX_SIZE + 2][MAX_SIZE + 2]; /* (+2) - boundary elements */
+MPI_Status status;
+
+typedef double matrix[][]; /* (+2) - boundary elements */
 
 volatile struct globmem {
     int N;        /* matrix size		*/
@@ -26,10 +33,12 @@ volatile struct globmem {
     double w;        /* relaxation factor	*/
     int PRINT;        /* print switch		*/
     matrix A;        /* matrix A		*/
+    int nproc;
+    int myrank;
 } *glob;
 
 /* forward declarations */
-int work();
+int work(int n_rows, int offset);
 
 void Init_Matrix();
 
@@ -43,36 +52,91 @@ int
 main(int argc, char **argv) {
     int i, timestart, timeend, iter;
 
+    int rows; /* amount of work per node (rows per worker) */
+    int offset;
+
     glob = (struct globmem *) malloc(sizeof(struct globmem));
 
+    MPI_Init(&argc, &argv);
+
+    printf("SIZE = %d, number of nodes = %d\n", glob->N, glob->nproc);
     Init_Default();        /* Init default values	*/
     Read_Options(argc, argv);    /* Read arguments	*/
-    Init_Matrix();        /* Init the matrix	*/
-    iter = work();
-    if (glob->PRINT == 1)
-        Print_Matrix();
-    printf("\nNumber of iterations = %d\n", iter);
+
+    if(glob->myrank == 0) {
+        Init_Matrix();        /* Init the matrix	*/
+        timestart = MPI_Wtime();
+
+        //split the matrix
+        assert(glob->nproc > 0);
+        assert(glob->N % glob->nproc == 0);
+        rows = glob->N / glob->nproc;
+        //send to workers
+        offset = rows;
+        for(int i = 1; i < glob->nproc; i++){
+            MPI_Send(&offset, 1, MPI_INT, i, FROM_MASTER, MPI_COMM_WORLD);
+            MPI_Send(&rows, 1, MPI_INT, i, FROM_MASTER, MPI_COMM_WORLD);
+            MPI_Send(&glob->A[offset][0], rows*glob->N, MPI_DOUBLE, i, FROM_MASTER, MPI_COMM_WORLD);
+            offset += rows;
+        }
+        //work work work
+        iter = work(rows, offset);
+        //receive results
+        for(int i = 1; i < glob->nproc; i++){
+            MPI_Recv(&offset, 1, MPI_INT, i, FROM_WORKER, MPI_COMM_WORLD, &status);
+            MPI_Recv(&glob->A[offset][0], rows*glob->N, MPI_DOUBLE, i, FROM_WORKER, MPI_COMM_WORLD, &status);
+        }
+        timeend = MPI_Wtime();
+        if (glob->PRINT == 1)
+            Print_Matrix();
+        printf("\nNumber of iterations = %d\n", iter);
+    }else {
+        int nb_rows, offset;
+        MPI_Recv(&nb_rows, 1, MPI_INT, 0, FROM_MASTER, MPI_COMM_WORLD, &status);
+        MPI_Recv(&offset, 1, MPI_INT, 0, FROM_MASTER, MPI_COMM_WORLD, &status);
+        MPI_Recv(&glob->A[offset][0], nb_rows*glob->N, MPI_DOUBLE, 0, FROM_MASTER, MPI_COMM_WORLD, &status);
+        //workers job
+        printf("Worker %d received %d rows\n", glob->myrank, nb_rows);
+        printf("Worker %d received %d offset\n", glob->myrank, offset);
+        iter = work(nb_rows, offset);
+        //send back result to master
+        MPI_Send(&offset, 1, MPI_INT, 0, FROM_WORKER, MPI_COMM_WORLD);
+        MPI_Send(&glob->A[offset][0], nb_rows*glob->N, MPI_DOUBLE, 0, FROM_WORKER, MPI_COMM_WORLD);
+    }
+
+
+    MPI_Finalize();
+    return 0;
 }
 
 int
-work() {
+work(int n_rows, int offset) {
     double prevmax_even, prevmax_odd, maxi, sum, w;
-    int m, n, N, i;
+    int m, n, n_cols, i;
     int finished = 0;
     int turn = EVEN_TURN;
     int iteration = 0;
 
     prevmax_even = 0.0;
     prevmax_odd = 0.0;
-    N = glob->N;
+
+    n_cols = glob->N;
     w = glob->w;
 
     while (!finished) {
         iteration++;
+        if(glob->myrank != 0) {
+            MPI_Recv(&glob->A[offset-1][0], glob->N, MPI_DOUBLE, glob->myrank - 1, FROM_WORKER, MPI_COMM_WORLD, &status);
+            MPI_Send(&glob->A[offset][0], glob->N, MPI_DOUBLE, glob->myrank - 1, FROM_WORKER, MPI_COMM_WORLD);
+        }
+        if(glob->myrank != glob->nproc-1) {
+            MPI_Send(&glob->A[offset + n_rows][0], glob->N, MPI_DOUBLE, glob->myrank + 1, FROM_WORKER, MPI_COMM_WORLD);
+            MPI_Recv(&glob->A[offset+1][0], glob->N, MPI_DOUBLE, glob->myrank + 1, FROM_WORKER, MPI_COMM_WORLD, &status);
+        }
         if (turn == EVEN_TURN) {
             /* CALCULATE part A - even elements */
-            for (m = 1; m < N + 1; m++) {
-                for (n = 1; n < N + 1; n++) {
+            for (m = offset + 1; m < offset + n_rows + 1; m++) {
+                for (n = 1; n < n_cols + 1; n++) {
                     if (((m + n) % 2) == 0)
                         glob->A[m][n] = (1 - w) * glob->A[m][n]
                                         + w * (glob->A[m - 1][n] + glob->A[m + 1][n]
@@ -80,10 +144,10 @@ work() {
                 }
             }
             /* Calculate the maximum sum of the elements */
-            maxi = -999999.0;
-            for (m = 1; m < N + 1; m++) {
+            maxi = DBL_MIN;
+            for (m = offset + 1; m < offset + n_rows + 1; m++) {
                 sum = 0.0;
-                for (n = 1; n < N + 1; n++)
+                for (n = 1; n < n_cols + 1; n++)
                     sum += glob->A[m][n];
                 if (sum > maxi)
                     maxi = sum;
@@ -100,8 +164,8 @@ work() {
 
         } else if (turn == ODD_TURN) {
             /* CALCULATE part B - odd elements*/
-            for (m = 1; m < N + 1; m++) {
-                for (n = 1; n < N + 1; n++) {
+            for (m = offset + 1; m < offset + n_rows + 1; m++) {
+                for (n = 1; n < n_cols + 1; n++) {
                     if (((m + n) % 2) == 1)
                         glob->A[m][n] = (1 - w) * glob->A[m][n]
                                         + w * (glob->A[m - 1][n] + glob->A[m + 1][n]
@@ -109,17 +173,17 @@ work() {
                 }
             }
             /* Calculate the maximum sum of the elements */
-            maxi = -999999.0;
-            for (m = 1; m < N + 1; m++) {
+            maxi = DBL_MIN;
+            for (m = offset + 1; m < offset + n_rows + 1; m++) {
                 sum = 0.0;
-                for (n = 1; n < N + 1; n++)
+                for (n = 1; n < n_cols + 1; n++)
                     sum += glob->A[m][n];
                 if (sum > maxi)
                     maxi = sum;
             }
             /* Compare the sum with the prev sum, i.e., check wether
              * we are finished or not. */
-            if (fabs(maxi - prevmax_odd) <= glob->difflimit)
+            if (fabs(maxi - prevmax_even) <= glob->difflimit)
                 finished = 1;
             if ((iteration % 100) == 0)
                 printf("Iteration: %d, maxi = %f, prevmax_odd = %f\n",
@@ -135,6 +199,20 @@ work() {
             /* exit if we don't converge fast enough */
             printf("Max number of iterations reached! Exit!\n");
             finished = 1;
+        }
+        if(glob->myrank != 0){
+            MPI_Send(&finished, 1, MPI_INT, 0, FROM_WORKER, MPI_COMM_WORLD);
+            MPI_Recv(&finished, 1, MPI_INT, 0, FROM_MASTER, MPI_COMM_WORLD, &status);
+        }else {
+            int temp = 0;
+            int p;
+            for(p = 1; p < glob->nproc; p++){
+                MPI_Recv(&temp, 1, MPI_INT, p, FROM_WORKER, MPI_COMM_WORLD, &status);
+                finished = finished || temp;
+            }
+            for(p = 1; p < glob->nproc; p++){
+                MPI_Send(&finished, 1, MPI_INT, p, FROM_MASTER, MPI_COMM_WORLD);
+            }
         }
     }
     return iteration;
@@ -230,7 +308,10 @@ Init_Default() {
     glob->Init = "rand";
     glob->maxnum = 15.0;
     glob->w = 0.5;
-    glob->PRINT = 0;
+    glob->PRINT = 1;
+    MPI_Comm_size(MPI_COMM_WORLD, &(glob->nproc));
+    MPI_Comm_rank(MPI_COMM_WORLD, &(glob->myrank));
+    matrix[glob->N] = malloc((N+2) * (N+2) * sizeof(double));
 }
 
 int
