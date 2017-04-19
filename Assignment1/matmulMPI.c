@@ -74,7 +74,6 @@ transp_matrix(void) {
 }
 // static void
 // transp_matrix(void) {
-//   int temp;
 //   for(int i=0;i<SIZE; i++)
 //     for (int j=0; j<i;j++){
 //       b[i][j] = b[i][j]+b[j][i];
