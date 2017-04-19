@@ -54,10 +54,7 @@ int Read_Options(int, char **);
 
 int
 main(int argc, char **argv) {
-    int i, timestart, timeend, iter;
-
-    int rows; /* amount of work per node (rows per worker) */
-    int offset;
+    int timestart, timeend, iter;
 
     glob = (struct globmem *) malloc(sizeof(struct globmem));
 
@@ -74,22 +71,22 @@ main(int argc, char **argv) {
         //split the matrix
         assert(glob->nproc > 0);
         assert(glob->N % glob->nproc == 0);
-        rows = glob->N / glob->nproc;
+        int rows = glob->N / glob->nproc;
         //send to workers
-        offset = rows;
+        int offset = rows + 1; // First is extra
         for(int i = 1; i < glob->nproc; i++){
             MPI_Send(&offset, 1, MPI_INT, i, FROM_MASTER, MPI_COMM_WORLD);
             MPI_Send(&rows, 1, MPI_INT, i, FROM_MASTER, MPI_COMM_WORLD);
-            MPI_Send(&glob->A[offset][0], rows*glob->N, MPI_DOUBLE, i, FROM_MASTER, MPI_COMM_WORLD);
+            MPI_Send(&glob->A[offset-1][0], (rows + 2) * (glob->N + 2), MPI_DOUBLE, i, FROM_MASTER, MPI_COMM_WORLD);
             offset += rows;
         }
         //work work work
-        iter = work(rows, 0);
+        iter = work(rows, 1);
         //receive results
         for(int i = 1; i < glob->nproc; i++){
             MPI_Recv(&offset, 1, MPI_INT, i, FROM_WORKER, MPI_COMM_WORLD, &status);
             printf("Master will receive %d rows from offset %d from worker %d\n", rows, offset, i);
-            MPI_Recv(&glob->A[offset][0], rows*glob->N, MPI_DOUBLE, i, FROM_WORKER, MPI_COMM_WORLD, &status);
+            MPI_Recv(&glob->A[offset][0], rows * (glob->N + 2), MPI_DOUBLE, i, FROM_WORKER, MPI_COMM_WORLD, &status);
         }
         timeend = MPI_Wtime();
         if (glob->PRINT == 1)
@@ -99,14 +96,14 @@ main(int argc, char **argv) {
         int nb_rows, offset;
         MPI_Recv(&offset, 1, MPI_INT, 0, FROM_MASTER, MPI_COMM_WORLD, &status);
         MPI_Recv(&nb_rows, 1, MPI_INT, 0, FROM_MASTER, MPI_COMM_WORLD, &status);
-        MPI_Recv(&glob->A[offset][0], nb_rows*glob->N, MPI_DOUBLE, 0, FROM_MASTER, MPI_COMM_WORLD, &status);
+        MPI_Recv(&glob->A[offset-1][0], (nb_rows + 2) * (glob->N + 2), MPI_DOUBLE, 0, FROM_MASTER, MPI_COMM_WORLD, &status);
         //workers job
         printf("Worker %d received %d rows\n", glob->myrank, nb_rows);
         printf("Worker %d received %d offset\n", glob->myrank, offset);
         iter = work(nb_rows, offset);
         //send back result to master
         MPI_Send(&offset, 1, MPI_INT, 0, FROM_WORKER, MPI_COMM_WORLD);
-        MPI_Send(&glob->A[offset][0], nb_rows*glob->N, MPI_DOUBLE, 0, FROM_WORKER, MPI_COMM_WORLD);
+        MPI_Send(&glob->A[offset][0], nb_rows * (glob->N + 2), MPI_DOUBLE, 0, FROM_WORKER, MPI_COMM_WORLD);
     }
 
 
@@ -117,7 +114,7 @@ main(int argc, char **argv) {
 int
 work(int n_rows, int offset) {
     double prevmax_even, prevmax_odd, maxi, sum, w;
-    int m, n, n_cols, i;
+    int m, n, n_cols;
     int finished = 0;
     int turn = EVEN_TURN;
     int iteration = 0;
@@ -130,6 +127,7 @@ work(int n_rows, int offset) {
 
     while (!finished) {
         iteration++;
+        // Exchange rows between workers
         if(glob->myrank != 0) {
             //printf("%f - Worker %d will receive above-top row of worker %d\n", MPI_Wtime(), glob->myrank, glob->myrank - 1);
             MPI_Recv(&glob->A[offset-1][0], glob->N, MPI_DOUBLE, glob->myrank - 1, WORKER_TO_WORKER, MPI_COMM_WORLD, &status);
@@ -144,7 +142,7 @@ work(int n_rows, int offset) {
         }
         if (turn == EVEN_TURN) {
             /* CALCULATE part A - even elements */
-            for (m = offset + 1; m < offset + n_rows + 1; m++) {
+            for (m = offset; m < offset + n_rows; m++) {
                 for (n = 1; n < n_cols + 1; n++) {
                     if (((m + n) % 2) == 0)
                         glob->A[m][n] = (1 - w) * glob->A[m][n]
@@ -154,7 +152,7 @@ work(int n_rows, int offset) {
             }
             /* Calculate the maximum sum of the elements */
             maxi = DBL_MIN;
-            for (m = offset + 1; m < offset + n_rows + 1; m++) {
+            for (m = offset; m < offset + n_rows; m++) {
                 sum = 0.0;
                 for (n = 1; n < n_cols + 1; n++)
                     sum += glob->A[m][n];
@@ -173,7 +171,7 @@ work(int n_rows, int offset) {
 
         } else if (turn == ODD_TURN) {
             /* CALCULATE part B - odd elements*/
-            for (m = offset + 1; m < offset + n_rows + 1; m++) {
+            for (m = offset; m < offset + n_rows; m++) {
                 for (n = 1; n < n_cols + 1; n++) {
                     if (((m + n) % 2) == 1)
                         glob->A[m][n] = (1 - w) * glob->A[m][n]
@@ -183,7 +181,7 @@ work(int n_rows, int offset) {
             }
             /* Calculate the maximum sum of the elements */
             maxi = DBL_MIN;
-            for (m = offset + 1; m < offset + n_rows + 1; m++) {
+            for (m = offset; m < offset + n_rows; m++) {
                 sum = 0.0;
                 for (n = 1; n < n_cols + 1; n++)
                     sum += glob->A[m][n];
