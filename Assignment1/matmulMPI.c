@@ -72,7 +72,15 @@ transp_matrix(void) {
       b[j][i] = temp;
     }
 }
-
+// static void
+// transp_matrix(void) {
+//   int temp;
+//   for(int i=0;i<SIZE; i++)
+//     for (int j=0; j<i;j++){
+//       b[i][j] = b[i][j]+b[j][i];
+//       b[j][i] = b[i][j]-b[j][i];
+//       b[i][j] = b[i][j]-b[j][i];    }
+// }
 //function to multiply the matrices based on the offset values
  static void
  multi_offset(int offset_row, int rowSize, int offset_col, int colSize){
