@@ -18,12 +18,16 @@
 #define MAX_SIZE 4096
 #define EVEN_TURN 0 /* shall we calculate the 'red' or the 'black' elements */
 #define ODD_TURN  1
+
 #define FROM_MASTER 1	/* setting a message type */
 #define FROM_WORKER 2	/* setting a message type */
+#define FINISHEDFLAG_FROM_WORKER 3
+#define FINISHEDFLAG_FROM_MASTER 4
+#define WORKER_TO_WORKER 5
 
 MPI_Status status;
 
-typedef double matrix[][]; /* (+2) - boundary elements */
+typedef double **matrix;
 
 volatile struct globmem {
     int N;        /* matrix size		*/
@@ -80,10 +84,11 @@ main(int argc, char **argv) {
             offset += rows;
         }
         //work work work
-        iter = work(rows, offset);
+        iter = work(rows, 0);
         //receive results
         for(int i = 1; i < glob->nproc; i++){
             MPI_Recv(&offset, 1, MPI_INT, i, FROM_WORKER, MPI_COMM_WORLD, &status);
+            printf("Master will receive %d rows from offset %d from worker %d\n", rows, offset, i);
             MPI_Recv(&glob->A[offset][0], rows*glob->N, MPI_DOUBLE, i, FROM_WORKER, MPI_COMM_WORLD, &status);
         }
         timeend = MPI_Wtime();
@@ -92,8 +97,8 @@ main(int argc, char **argv) {
         printf("\nNumber of iterations = %d\n", iter);
     }else {
         int nb_rows, offset;
-        MPI_Recv(&nb_rows, 1, MPI_INT, 0, FROM_MASTER, MPI_COMM_WORLD, &status);
         MPI_Recv(&offset, 1, MPI_INT, 0, FROM_MASTER, MPI_COMM_WORLD, &status);
+        MPI_Recv(&nb_rows, 1, MPI_INT, 0, FROM_MASTER, MPI_COMM_WORLD, &status);
         MPI_Recv(&glob->A[offset][0], nb_rows*glob->N, MPI_DOUBLE, 0, FROM_MASTER, MPI_COMM_WORLD, &status);
         //workers job
         printf("Worker %d received %d rows\n", glob->myrank, nb_rows);
@@ -126,12 +131,16 @@ work(int n_rows, int offset) {
     while (!finished) {
         iteration++;
         if(glob->myrank != 0) {
-            MPI_Recv(&glob->A[offset-1][0], glob->N, MPI_DOUBLE, glob->myrank - 1, FROM_WORKER, MPI_COMM_WORLD, &status);
-            MPI_Send(&glob->A[offset][0], glob->N, MPI_DOUBLE, glob->myrank - 1, FROM_WORKER, MPI_COMM_WORLD);
+            //printf("%f - Worker %d will receive above-top row of worker %d\n", MPI_Wtime(), glob->myrank, glob->myrank - 1);
+            MPI_Recv(&glob->A[offset-1][0], glob->N, MPI_DOUBLE, glob->myrank - 1, WORKER_TO_WORKER, MPI_COMM_WORLD, &status);
+            //printf("%f - Worker %d will send top row to worker %d\n", MPI_Wtime(), glob->myrank, glob->myrank - 1);
+            MPI_Send(&glob->A[offset][0], glob->N, MPI_DOUBLE, glob->myrank - 1, WORKER_TO_WORKER, MPI_COMM_WORLD);
         }
         if(glob->myrank != glob->nproc-1) {
-            MPI_Send(&glob->A[offset + n_rows][0], glob->N, MPI_DOUBLE, glob->myrank + 1, FROM_WORKER, MPI_COMM_WORLD);
-            MPI_Recv(&glob->A[offset+1][0], glob->N, MPI_DOUBLE, glob->myrank + 1, FROM_WORKER, MPI_COMM_WORLD, &status);
+            //printf("%f - Worker %d will send bottom row to worker %d\n", MPI_Wtime(), glob->myrank, glob->myrank + 1);
+            MPI_Send(&glob->A[offset + n_rows][0], glob->N, MPI_DOUBLE, glob->myrank + 1, WORKER_TO_WORKER, MPI_COMM_WORLD);
+            //printf("%f - Worker %d will receive below-bottom row from worker %d\n", MPI_Wtime(), glob->myrank, glob->myrank + 1);
+            MPI_Recv(&glob->A[offset + n_rows + 1][0], glob->N, MPI_DOUBLE, glob->myrank + 1, WORKER_TO_WORKER, MPI_COMM_WORLD, &status);
         }
         if (turn == EVEN_TURN) {
             /* CALCULATE part A - even elements */
@@ -201,17 +210,17 @@ work(int n_rows, int offset) {
             finished = 1;
         }
         if(glob->myrank != 0){
-            MPI_Send(&finished, 1, MPI_INT, 0, FROM_WORKER, MPI_COMM_WORLD);
-            MPI_Recv(&finished, 1, MPI_INT, 0, FROM_MASTER, MPI_COMM_WORLD, &status);
+            MPI_Send(&finished, 1, MPI_INT, 0, FINISHEDFLAG_FROM_WORKER, MPI_COMM_WORLD);
+            MPI_Recv(&finished, 1, MPI_INT, 0, FINISHEDFLAG_FROM_MASTER, MPI_COMM_WORLD, &status);
         }else {
             int temp = 0;
             int p;
             for(p = 1; p < glob->nproc; p++){
-                MPI_Recv(&temp, 1, MPI_INT, p, FROM_WORKER, MPI_COMM_WORLD, &status);
+                MPI_Recv(&temp, 1, MPI_INT, p, FINISHEDFLAG_FROM_WORKER, MPI_COMM_WORLD, &status);
                 finished = finished || temp;
             }
             for(p = 1; p < glob->nproc; p++){
-                MPI_Send(&finished, 1, MPI_INT, p, FROM_MASTER, MPI_COMM_WORLD);
+                MPI_Send(&finished, 1, MPI_INT, p, FINISHEDFLAG_FROM_MASTER, MPI_COMM_WORLD);
             }
         }
     }
@@ -311,7 +320,14 @@ Init_Default() {
     glob->PRINT = 1;
     MPI_Comm_size(MPI_COMM_WORLD, &(glob->nproc));
     MPI_Comm_rank(MPI_COMM_WORLD, &(glob->myrank));
-    matrix[glob->N] = malloc((N+2) * (N+2) * sizeof(double));
+
+    // Dynamically allocate contiguous 2D-array
+    // https://stackoverflow.com/a/29375830
+    int sidelength = glob->N + 2;
+    glob->A = malloc(sidelength * sizeof(double));
+    glob->A[0] = malloc(sidelength * sidelength * sizeof(double));
+    for (int i = 1; i < sidelength; i++)
+        glob->A[i] = glob->A[i-1] + sidelength;
 }
 
 int
