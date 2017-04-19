@@ -1,12 +1,12 @@
 /***************************************************************************
  *
- * MPI-version of row-wise Matrix-Matrix multiplication
+ * MPI-version of checkerboard Matrix-Matrix multiplication
  *
  *             File : matmul_mpi.c
- *        Author(s) : Håkan Grahn
+ *        Author(s) : Rosen Sasov, Mohit Vellanki
  *          Created : 2009-01-30
- *    Last Modified : 2009-01-30
- * Last Modified by : Håkan Grahn
+ *    Last Modified : 2017-04-19
+ * Last Modified by : Mohit Vellanki
  *
  * (c) 2009-2017 by Håkan Grahn, Blekinge Institute of Technology.
  * All Rights Reserved
@@ -16,7 +16,7 @@
  * Compile with:
  * mpicc ./matmulMPI.c -o [Name of executable]
  * Run with:
- * mpirun -n [Number of cores(This case should be tested with: 1,2,4,8)] ./[Name of executable] 
+ * mpirun -n [Number of cores(This case should be tested with: 1,2,4,8)] ./[Name of executable]
  */
 
 #include <stdio.h>
@@ -37,6 +37,7 @@ static double b[SIZE][SIZE];
 static double c[SIZE][SIZE];
 static double d[SIZE][SIZE];
 
+//function to initialize the matrix with default values
 static void
 init_matrix(void)
 {
@@ -60,6 +61,7 @@ init_matrix(void)
         }
 }
 
+//function to make the transpose of the matrix
 static void
 transp_matrix(void) {
   int temp;
@@ -71,6 +73,7 @@ transp_matrix(void) {
     }
 }
 
+//function to multiply the matrices based on the offset values
  static void
  multi_offset(int offset_row, int rowSize, int offset_col, int colSize){
  		 for(int i=offset_row;i<offset_row+rowSize;i++){
@@ -83,6 +86,7 @@ transp_matrix(void) {
  		 }
 }
 
+//function to verify the result received
 static void
 editResult(void)
 {
@@ -91,6 +95,7 @@ editResult(void)
 			if(d[i][j]!=0.0) c[i][j] = d[i][j];
 }
 
+//function to print a matrix
 static void
 print_matrix(void)
 {
