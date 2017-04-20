@@ -98,7 +98,6 @@ main(int argc, char **argv) {
             MPI_Send(&offset, 1, MPI_INT, i, FROM_MASTER, MPI_COMM_WORLD);
             MPI_Send(&rows, 1, MPI_INT, i, FROM_MASTER, MPI_COMM_WORLD);
             MPI_Send(&glob->A[offset-1][0], (rows + 2) * (glob->N + 2), MPI_DOUBLE, i, FROM_MASTER, MPI_COMM_WORLD);
-            printf("first value sent to worker %d: A[%d][%d]=%f\n", i, offset-1, 0, glob->A[offset-1][0]);
             offset += rows;
         }
         //work work work
@@ -106,9 +105,7 @@ main(int argc, char **argv) {
         //receive results
         for(int i = 1; i < glob->nproc; i++){
             MPI_Recv(&offset, 1, MPI_INT, i, FROM_WORKER, MPI_COMM_WORLD, &status);
-            printf("Master will receive %d rows from offset %d from worker %d\n", rows, offset, i);
             MPI_Recv(&glob->A[offset][0], rows * (glob->N + 2), MPI_DOUBLE, i, FROM_WORKER, MPI_COMM_WORLD, &status);
-            printf("First value received from worker %d: A[%d][%d]=%f\n", i, offset, 0, glob->A[offset][0]);
         }
         timeend = MPI_Wtime();
         if (glob->PRINT == 1)
@@ -119,17 +116,11 @@ main(int argc, char **argv) {
         MPI_Recv(&offset, 1, MPI_INT, 0, FROM_MASTER, MPI_COMM_WORLD, &status);
         MPI_Recv(&nb_rows, 1, MPI_INT, 0, FROM_MASTER, MPI_COMM_WORLD, &status);
         MPI_Recv(&glob->A[offset-1][0], (nb_rows + 2) * (glob->N + 2), MPI_DOUBLE, 0, FROM_MASTER, MPI_COMM_WORLD, &status);
-        printf("Worker %d received matrix:\n", glob->myrank);
-        Print_Matrix();
         //workers job
-        printf("Worker %d received %d rows\n", glob->myrank, nb_rows);
-        printf("Worker %d received %d offset\n", glob->myrank, offset);
-        printf("first value received by worker %d: A[%d][%d]=%f\n", glob->myrank, offset-1, 0, glob->A[offset-1][0]);
         iter = work(nb_rows, offset);
         //send back result to master
         MPI_Send(&offset, 1, MPI_INT, 0, FROM_WORKER, MPI_COMM_WORLD);
         MPI_Send(&glob->A[offset][0], nb_rows * (glob->N + 2), MPI_DOUBLE, 0, FROM_WORKER, MPI_COMM_WORLD);
-        printf("First value sent back by worker %d: A[%d][%d]=%f\n", glob->myrank, offset, 0, glob->A[offset][0]);
     }
 
 
@@ -148,10 +139,6 @@ void laplace_sor(int n_rows, int offset, int isOddTurn)
                 glob->A[m][n] = (1 - w) * glob->A[m][n]
                                 + w * (glob->A[m - 1][n] + glob->A[m + 1][n]
                                        + glob->A[m][n - 1] + glob->A[m][n + 1]) / 4;
-                if (m == offset && n == 1)
-                {
-                //    printf("Worker %d touched first element, A[%d][%d]=%f\n", glob->myrank, m, n, glob->A[m][n]);
-                }
             }
         }
     }
@@ -332,7 +319,7 @@ Init_Default() {
     glob->Init = "rand";
     glob->maxnum = 15.0;
     glob->w = 0.5;
-    glob->PRINT = 1;
+    glob->PRINT = 0;
     MPI_Comm_size(MPI_COMM_WORLD, &(glob->nproc));
     MPI_Comm_rank(MPI_COMM_WORLD, &(glob->myrank));
 }
