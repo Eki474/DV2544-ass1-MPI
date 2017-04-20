@@ -3,7 +3,13 @@
  * S O R algorithm
  * ("Red-Black" solution to LaPlace approximation)
  *
- * sequential version
+ *             File : sorMPI.c
+ *        Author(s) : Rosen Sasov, Mohit Vellanki
+ *          Created : 2017-04-19
+ *    Last Modified : 2017-04-20
+ * Last Modified by : Mohit Vellanki
+ *
+ * Parallel version
  *
  *****************************************************/
 
