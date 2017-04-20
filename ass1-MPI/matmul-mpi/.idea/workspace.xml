@@ -11,7 +11,6 @@
   <component name="ChangeListManager">
     <list default="true" id="6604d642-2aeb-4f2b-8ee5-bc9fe21ffa79" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../laplace_sor_mpi.c" afterPath="$PROJECT_DIR$/../laplace_sor_mpi.c" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="$PROJECT_DIR$/cmake-build-debug/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -37,7 +36,7 @@
       <file leaf-file-name="laplace_sor_seq.c" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/../laplace_sor_seq.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1494">
+            <state relative-caret-position="346">
               <caret line="83" column="26" lean-forward="false" selection-start-line="83" selection-start-column="19" selection-end-line="83" selection-end-column="26" />
               <folding />
             </state>
@@ -47,10 +46,10 @@
       <file leaf-file-name="laplace_sor_mpi.c" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/../laplace_sor_mpi.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="378">
-              <caret line="96" column="17" lean-forward="false" selection-start-line="96" selection-start-column="17" selection-end-line="96" selection-end-column="17" />
+            <state relative-caret-position="3114">
+              <caret line="173" column="0" lean-forward="false" selection-start-line="173" selection-start-column="0" selection-end-line="173" selection-end-column="0" />
               <folding>
-                <element signature="e#10677#13094#0" expanded="false" />
+                <element signature="e#11053#13470#0" expanded="false" />
               </folding>
             </state>
           </provider>
@@ -135,7 +134,7 @@
   </component>
   <component name="PropertiesComponent">
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../laplace_sor_seq.c" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../laplace_sor_mpi.c" />
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -357,12 +356,12 @@
       <workItem from="1492607205811" duration="1701000" />
       <workItem from="1492608972531" duration="7701000" />
       <workItem from="1492618319369" duration="599000" />
-      <workItem from="1492698410776" duration="2999000" />
+      <workItem from="1492698410776" duration="3109000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="18233000" />
+    <option name="totallyTimeSpent" value="18343000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="27" width="1366" height="741" extended-state="6" />
@@ -422,7 +421,7 @@
         <state relative-caret-position="612">
           <caret line="34" column="42" lean-forward="false" selection-start-line="34" selection-start-column="42" selection-end-line="34" selection-end-column="42" />
           <folding>
-            <element signature="e#10677#13094#0" expanded="false" />
+            <element signature="e#11053#13470#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -448,7 +447,7 @@
         <state relative-caret-position="612">
           <caret line="34" column="42" lean-forward="true" selection-start-line="34" selection-start-column="42" selection-end-line="34" selection-end-column="42" />
           <folding>
-            <element signature="e#10677#13094#0" expanded="false" />
+            <element signature="e#11053#13470#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -474,7 +473,7 @@
         <state relative-caret-position="4590">
           <caret line="255" column="37" lean-forward="false" selection-start-line="255" selection-start-column="37" selection-end-line="255" selection-end-column="37" />
           <folding>
-            <element signature="e#10677#13094#0" expanded="false" />
+            <element signature="e#11053#13470#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -492,7 +491,7 @@
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
-            <element signature="e#10677#13094#0" expanded="false" />
+            <element signature="e#11053#13470#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -544,7 +543,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/../laplace_sor_seq.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1494">
+        <state relative-caret-position="346">
           <caret line="83" column="26" lean-forward="false" selection-start-line="83" selection-start-column="19" selection-end-line="83" selection-end-column="26" />
           <folding />
         </state>
@@ -552,10 +551,10 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/../laplace_sor_mpi.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="378">
-          <caret line="96" column="17" lean-forward="false" selection-start-line="96" selection-start-column="17" selection-end-line="96" selection-end-column="17" />
+        <state relative-caret-position="3114">
+          <caret line="173" column="0" lean-forward="false" selection-start-line="173" selection-start-column="0" selection-end-line="173" selection-end-column="0" />
           <folding>
-            <element signature="e#10677#13094#0" expanded="false" />
+            <element signature="e#11053#13470#0" expanded="false" />
           </folding>
         </state>
       </provider>
