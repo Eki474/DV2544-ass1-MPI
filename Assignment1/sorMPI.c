@@ -3,13 +3,7 @@
  * S O R algorithm
  * ("Red-Black" solution to LaPlace approximation)
  *
- *             File : sorMPI.c
- *        Author(s) : Rosen Sasov, Mohit Vellanki
- *          Created : 2017-04-19
- *    Last Modified : 2017-04-20
- * Last Modified by : Mohit Vellanki
- *
- * Parallel version
+ * sequential version
  *
  *****************************************************/
 
@@ -52,7 +46,7 @@ main(int argc, char **argv)
     int i, timestart, timeend, iter;
     int rank,nproc,nprocT;
     int mtype;
-    int rows_node,cols_node,offset_rows,offset_cols;
+    int rows_node,offset_rows;
     glob = (struct globmem *) malloc(sizeof(struct globmem));
 
     MPI_Init(&argc,&argv);
@@ -63,26 +57,20 @@ main(int argc, char **argv)
     Read_Options(argc,argv);	/* Read arguments	*/
     Init_Matrix();		/* Init the matrix	*/
 
-    if(rank==0)
-    {
     timestart= MPI_Wtime();
 
-    nprocT=nproc;
-    rows_node=N;
-    cols_node=N;
-    while(nprocT>1){
-      if(rows_node>cols_node)
-        rows_node/=2;
-      else
-        cols_node/=2;
-    nprocT/=2;
+    if(rank==0)
+    {
+      mtype = FROM_MASTER;
+      offset_rows = 1;
     }
-    mtype = FROM_MASTER;
-    offset_rows = 0;
-    offset_cols = 0;
+    else{
+      mtype = FROM_WORKER;
+    }
     iter = work(nproc);
 
-    }
+
+
     if (glob->PRINT == 1)
 	Print_Matrix();
     printf("\nNumber of iterations = %d\n", iter);
@@ -106,6 +94,7 @@ work()
     while (!finished) {
 	iteration++;
 	if (turn == EVEN_TURN) {
+      for i=0 i<nproc i++ offset -> 1, m=i+offset, n=i+offset
 	    /* CALCULATE part A - even elements */
 	    for (m = 1; m < N+1; m++) {
 		for (n = 1; n < N+1; n++) {
@@ -137,6 +126,7 @@ work()
 	    turn = ODD_TURN;
 
 	} else if (turn == ODD_TURN) {
+    mtype
 	    /* CALCULATE part B - odd elements*/
 	    for (m = 1; m < N+1; m++) {
 		for (n = 1; n < N+1; n++) {
@@ -183,8 +173,8 @@ work()
 void
 Init_Matrix()
 {
-    int i, j, N, dmmy;
-
+    int i, j, N, dmmy,dest,src;
+    int offset_rows, nprocT, rows_node;
     N = glob->N;
     printf("\nsize      = %dx%d ",N,N);
     printf("\nmaxnum    = %d \n",glob->maxnum);
@@ -244,8 +234,45 @@ Init_Matrix()
     }
 
     printf("done \n\n");
-    if (glob->PRINT == 1)
-	Print_Matrix();
+    if (glob->PRINT == 1) Print_Matrix();
+
+    if(rank==0)
+    {
+        mtype = FROM_MASTER;
+
+        nprocT=nproc;
+        rows_node=N;
+
+        while(nprocT>1)
+        {
+          rows_node/=2;
+          nprocT/=2;
+        }
+
+        offset_rows=1;
+
+        for(dest=1;dest<nproc;dest++)
+        {
+          if(offset_rows< N-offset_rows) offset_rows+=rows_node;
+          else offset_rows=1;
+
+          MPI_Send(&rows_node,1,MPI_INT,dest,mtype, MPI_COMM_WORLD);
+          MPI_Send(&offset_rows, 1, MPI_INT, dest, mtype, MPI_COMM_WORLD);
+          MPI_Send(&a[offset_rows-1][1], N, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
+          MPI_Send(&a[offset_rows][0], N+2, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
+          MPI_Send(&a[offset_rows+1][1], N, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
+        }
+    }
+    else
+    {
+      mtype = FROM_MASTER;
+      MPI_Recv(&rows_node, 1, MPI_INT, 0, mtype, MPI_COMM_WORLD, &status);
+      MPI_Recv(&offset_rows, 1, MPI_INT, 0, mtype, MPI_COMM_WORLD, &status);
+      MPI_Recv(&a[offset_rows-1][1], N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD, &status);
+      MPI_Recv(&a[offset_rows][0], N+2, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD, &status);
+      MPI_Recv(&a[offset_rows+1][1], N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD, &status);
+    }
+
 }
 
 void
