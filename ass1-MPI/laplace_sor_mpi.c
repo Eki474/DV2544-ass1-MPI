@@ -65,6 +65,7 @@ main(int argc, char **argv) {
     Init_Default();        /* Init default values	*/
     Read_Options(argc, argv);    /* Read arguments	*/
 
+    //master job
     if(glob->myrank == 0) {
         Init_Matrix();        /* Init the matrix	*/
         timestart = MPI_Wtime();
@@ -93,6 +94,7 @@ main(int argc, char **argv) {
         if (glob->PRINT == 1)
             Print_Matrix();
         printf("\nNumber of iterations = %d\n", iter);
+    //workers job
     }else {
         int nb_rows, offset;
         MPI_Recv(&offset, 1, MPI_INT, 0, FROM_MASTER, MPI_COMM_WORLD, &status);
@@ -150,9 +152,9 @@ work(int n_rows, int offset) {
         }
         if(glob->myrank != glob->nproc-1) {
             //printf("%f - Worker %d will send bottom row to worker %d\n", MPI_Wtime(), glob->myrank, glob->myrank + 1);
-            MPI_Send(&glob->A[offset + n_rows][0], glob->N, MPI_DOUBLE, glob->myrank + 1, WORKER_TO_WORKER, MPI_COMM_WORLD);
+            MPI_Send(&glob->A[offset + n_rows-1][0], glob->N, MPI_DOUBLE, glob->myrank + 1, WORKER_TO_WORKER, MPI_COMM_WORLD);
             //printf("%f - Worker %d will receive below-bottom row from worker %d\n", MPI_Wtime(), glob->myrank, glob->myrank + 1);
-            MPI_Recv(&glob->A[offset + n_rows + 1][0], glob->N, MPI_DOUBLE, glob->myrank + 1, WORKER_TO_WORKER, MPI_COMM_WORLD, &status);
+            MPI_Recv(&glob->A[offset + n_rows][0], glob->N, MPI_DOUBLE, glob->myrank + 1, WORKER_TO_WORKER, MPI_COMM_WORLD, &status);
         }
 
         /* CALCULATE */
