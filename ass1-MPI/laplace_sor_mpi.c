@@ -19,8 +19,9 @@
 #define EVEN_TURN 0 /* shall we calculate the 'red' or the 'black' elements */
 #define ODD_TURN  1
 
-#define FROM_MASTER 1	/* setting a message type */
-#define FROM_WORKER 2	/* setting a message type */
+/* message types */
+#define FROM_MASTER 1
+#define FROM_WORKER 2
 #define FINISHEDFLAG_FROM_WORKER 3
 #define FINISHEDFLAG_FROM_MASTER 4
 #define WORKER_TO_WORKER 5
@@ -50,7 +51,7 @@ void Print_Matrix();
 
 void Init_Default();
 
-int Read_Options(int, char **);
+void Read_Options(int, char **);
 
 int
 main(int argc, char **argv) {
@@ -111,19 +112,32 @@ main(int argc, char **argv) {
     return 0;
 }
 
+/* Execute one turn of the SOR algorithm on a chunk of data */
+void laplace_sor(int n_rows, int offset, int isOddTurn)
+{
+    int n_cols = glob->N;
+    double w = glob->w;
+    for (int m = offset; m < offset + n_rows; m++) {
+        for (int n = 1; n < n_cols + 1; n++) {
+            if (((m + n) % 2) == isOddTurn) {
+                glob->A[m][n] = (1 - w) * glob->A[m][n]
+                                + w * (glob->A[m - 1][n] + glob->A[m + 1][n]
+                                       + glob->A[m][n - 1] + glob->A[m][n + 1]) / 4;
+            }
+        }
+    }
+}
+
 int
 work(int n_rows, int offset) {
-    double prevmax_even, prevmax_odd, maxi, sum, w;
+    double maxi, sum;
     int m, n, n_cols;
     int finished = 0;
     int turn = EVEN_TURN;
     int iteration = 0;
-
-    prevmax_even = 0.0;
-    prevmax_odd = 0.0;
+    double prevmax[2] = { 0.0, 0.0 }; // Contains prevmax_even and prevmax_odd
 
     n_cols = glob->N;
-    w = glob->w;
 
     while (!finished) {
         iteration++;
@@ -140,64 +154,31 @@ work(int n_rows, int offset) {
             //printf("%f - Worker %d will receive below-bottom row from worker %d\n", MPI_Wtime(), glob->myrank, glob->myrank + 1);
             MPI_Recv(&glob->A[offset + n_rows + 1][0], glob->N, MPI_DOUBLE, glob->myrank + 1, WORKER_TO_WORKER, MPI_COMM_WORLD, &status);
         }
-        if (turn == EVEN_TURN) {
-            /* CALCULATE part A - even elements */
-            for (m = offset; m < offset + n_rows; m++) {
-                for (n = 1; n < n_cols + 1; n++) {
-                    if (((m + n) % 2) == 0)
-                        glob->A[m][n] = (1 - w) * glob->A[m][n]
-                                        + w * (glob->A[m - 1][n] + glob->A[m + 1][n]
-                                               + glob->A[m][n - 1] + glob->A[m][n + 1]) / 4;
-                }
-            }
-            /* Calculate the maximum sum of the elements */
-            maxi = DBL_MIN;
-            for (m = offset; m < offset + n_rows; m++) {
-                sum = 0.0;
-                for (n = 1; n < n_cols + 1; n++)
-                    sum += glob->A[m][n];
-                if (sum > maxi)
-                    maxi = sum;
-            }
-            /* Compare the sum with the prev sum, i.e., check wether
-             * we are finished or not. */
-            if (fabs(maxi - prevmax_even) <= glob->difflimit)
-                finished = 1;
-            if ((iteration % 100) == 0)
-                printf("Iteration: %d, maxi = %f, prevmax_even = %f\n",
-                       iteration, maxi, prevmax_even);
-            prevmax_even = maxi;
-            turn = ODD_TURN;
 
-        } else if (turn == ODD_TURN) {
-            /* CALCULATE part B - odd elements*/
-            for (m = offset; m < offset + n_rows; m++) {
-                for (n = 1; n < n_cols + 1; n++) {
-                    if (((m + n) % 2) == 1)
-                        glob->A[m][n] = (1 - w) * glob->A[m][n]
-                                        + w * (glob->A[m - 1][n] + glob->A[m + 1][n]
-                                               + glob->A[m][n - 1] + glob->A[m][n + 1]) / 4;
-                }
-            }
-            /* Calculate the maximum sum of the elements */
-            maxi = DBL_MIN;
-            for (m = offset; m < offset + n_rows; m++) {
-                sum = 0.0;
-                for (n = 1; n < n_cols + 1; n++)
-                    sum += glob->A[m][n];
-                if (sum > maxi)
-                    maxi = sum;
-            }
-            /* Compare the sum with the prev sum, i.e., check wether
-             * we are finished or not. */
-            if (fabs(maxi - prevmax_even) <= glob->difflimit)
-                finished = 1;
-            if ((iteration % 100) == 0)
-                printf("Iteration: %d, maxi = %f, prevmax_odd = %f\n",
-                       iteration, maxi, prevmax_odd);
-            prevmax_odd = maxi;
-            turn = EVEN_TURN;
-        } else {
+        /* CALCULATE */
+        laplace_sor(n_rows, offset, turn);
+
+        /* Calculate the maximum sum of the elements */
+        maxi = DBL_MIN;
+        for (m = offset; m < offset + n_rows; m++) {
+            sum = 0.0;
+            for (n = 1; n < n_cols + 1; n++)
+                sum += glob->A[m][n];
+            if (sum > maxi)
+                maxi = sum;
+        }
+        /* Compare the sum with the prev sum, i.e., check wether
+         * we are finished or not. */
+        if (fabs(maxi - prevmax[turn]) <= glob->difflimit)
+            finished = 1;
+        if ((iteration % 100) == 0)
+            printf("Iteration: %d, maxi = %f, prevmax[%d] = %f\n",
+                   iteration, maxi, turn, prevmax[turn]);
+        prevmax[turn] = maxi;
+
+        turn = turn == EVEN_TURN ? ODD_TURN : EVEN_TURN;
+
+        if (turn != EVEN_TURN && turn != ODD_TURN) {
             /* something is very wrong... */
             printf("PANIC: Something is really wrong!!!\n");
             exit(-1);
@@ -208,9 +189,12 @@ work(int n_rows, int offset) {
             finished = 1;
         }
         if(glob->myrank != 0){
+            /* Every worker (except for the master) sends their finished flag to the master */
             MPI_Send(&finished, 1, MPI_INT, 0, FINISHEDFLAG_FROM_WORKER, MPI_COMM_WORLD);
+            /* Receive the finished flag (in case one worker is finished, all workers have to stop */
             MPI_Recv(&finished, 1, MPI_INT, 0, FINISHEDFLAG_FROM_MASTER, MPI_COMM_WORLD, &status);
         }else {
+            /* Master stops all workers if at least one worker hit the terminating condition */
             int temp = 0;
             int p;
             for(p = 1; p < glob->nproc; p++){
@@ -229,7 +213,7 @@ work(int n_rows, int offset) {
 
 void
 Init_Matrix() {
-    int i, j, N, dmmy;
+    int i, j, N;
 
     N = glob->N;
     printf("\nsize      = %dx%d ", N, N);
@@ -260,6 +244,7 @@ Init_Matrix() {
         }
     }
     if (strcmp(glob->Init, "fast") == 0) {
+        int dmmy = 0;
         for (i = 1; i < N + 1; i++) {
             dmmy++;
             for (j = 1; j < N + 1; j++) {
@@ -328,7 +313,7 @@ Init_Default() {
         glob->A[i] = glob->A[i-1] + sidelength;
 }
 
-int
+void
 Read_Options(int argc, char **argv) {
     char *prog;
 
