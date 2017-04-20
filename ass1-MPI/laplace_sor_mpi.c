@@ -53,6 +53,24 @@ void Init_Default();
 
 void Read_Options(int, char **);
 
+void Allocate_Matrix()
+{
+    // Dynamically allocate contiguous 2D-array
+    // https://stackoverflow.com/a/29375830
+    int sidelength = glob->N + 2;
+    glob->A = malloc(sidelength * sizeof(double));
+    glob->A[0] = malloc(sidelength * sidelength * sizeof(double));
+    for (int i = 1; i < sidelength; i++)
+        glob->A[i] = glob->A[i-1] + sidelength;
+
+    double *valPtr = &glob->A[0][0];
+    for (int i=0; i<sidelength*sidelength; i++)
+    {
+        *valPtr = (float)i;
+        valPtr++;
+    }
+}
+
 int
 main(int argc, char **argv) {
     int timestart, timeend, iter;
@@ -64,6 +82,7 @@ main(int argc, char **argv) {
     printf("SIZE = %d, number of nodes = %d\n", glob->N, glob->nproc);
     Init_Default();        /* Init default values	*/
     Read_Options(argc, argv);    /* Read arguments	*/
+    Allocate_Matrix();
 
     if(glob->myrank == 0) {
         Init_Matrix();        /* Init the matrix	*/
@@ -74,11 +93,12 @@ main(int argc, char **argv) {
         assert(glob->N % glob->nproc == 0);
         int rows = glob->N / glob->nproc;
         //send to workers
-        int offset = rows + 1; // First is extra
+        int offset = rows + 1; // First row is border
         for(int i = 1; i < glob->nproc; i++){
             MPI_Send(&offset, 1, MPI_INT, i, FROM_MASTER, MPI_COMM_WORLD);
             MPI_Send(&rows, 1, MPI_INT, i, FROM_MASTER, MPI_COMM_WORLD);
             MPI_Send(&glob->A[offset-1][0], (rows + 2) * (glob->N + 2), MPI_DOUBLE, i, FROM_MASTER, MPI_COMM_WORLD);
+            printf("first value sent to worker %d: A[%d][%d]=%f\n", i, offset-1, 0, glob->A[offset-1][0]);
             offset += rows;
         }
         //work work work
@@ -88,6 +108,7 @@ main(int argc, char **argv) {
             MPI_Recv(&offset, 1, MPI_INT, i, FROM_WORKER, MPI_COMM_WORLD, &status);
             printf("Master will receive %d rows from offset %d from worker %d\n", rows, offset, i);
             MPI_Recv(&glob->A[offset][0], rows * (glob->N + 2), MPI_DOUBLE, i, FROM_WORKER, MPI_COMM_WORLD, &status);
+            printf("First value received from worker %d: A[%d][%d]=%f\n", i, offset, 0, glob->A[offset][0]);
         }
         timeend = MPI_Wtime();
         if (glob->PRINT == 1)
@@ -98,13 +119,17 @@ main(int argc, char **argv) {
         MPI_Recv(&offset, 1, MPI_INT, 0, FROM_MASTER, MPI_COMM_WORLD, &status);
         MPI_Recv(&nb_rows, 1, MPI_INT, 0, FROM_MASTER, MPI_COMM_WORLD, &status);
         MPI_Recv(&glob->A[offset-1][0], (nb_rows + 2) * (glob->N + 2), MPI_DOUBLE, 0, FROM_MASTER, MPI_COMM_WORLD, &status);
+        printf("Worker %d received matrix:\n", glob->myrank);
+        Print_Matrix();
         //workers job
         printf("Worker %d received %d rows\n", glob->myrank, nb_rows);
         printf("Worker %d received %d offset\n", glob->myrank, offset);
+        printf("first value received by worker %d: A[%d][%d]=%f\n", glob->myrank, offset-1, 0, glob->A[offset-1][0]);
         iter = work(nb_rows, offset);
         //send back result to master
         MPI_Send(&offset, 1, MPI_INT, 0, FROM_WORKER, MPI_COMM_WORLD);
         MPI_Send(&glob->A[offset][0], nb_rows * (glob->N + 2), MPI_DOUBLE, 0, FROM_WORKER, MPI_COMM_WORLD);
+        printf("First value sent back by worker %d: A[%d][%d]=%f\n", glob->myrank, offset, 0, glob->A[offset][0]);
     }
 
 
@@ -123,6 +148,10 @@ void laplace_sor(int n_rows, int offset, int isOddTurn)
                 glob->A[m][n] = (1 - w) * glob->A[m][n]
                                 + w * (glob->A[m - 1][n] + glob->A[m + 1][n]
                                        + glob->A[m][n - 1] + glob->A[m][n + 1]) / 4;
+                if (m == offset && n == 1)
+                {
+                //    printf("Worker %d touched first element, A[%d][%d]=%f\n", glob->myrank, m, n, glob->A[m][n]);
+                }
             }
         }
     }
@@ -143,17 +172,20 @@ work(int n_rows, int offset) {
         iteration++;
         // Exchange rows between workers
         if(glob->myrank != 0) {
-            //printf("%f - Worker %d will receive above-top row of worker %d\n", MPI_Wtime(), glob->myrank, glob->myrank - 1);
-            MPI_Recv(&glob->A[offset-1][0], glob->N, MPI_DOUBLE, glob->myrank - 1, WORKER_TO_WORKER, MPI_COMM_WORLD, &status);
-            //printf("%f - Worker %d will send top row to worker %d\n", MPI_Wtime(), glob->myrank, glob->myrank - 1);
-            MPI_Send(&glob->A[offset][0], glob->N, MPI_DOUBLE, glob->myrank - 1, WORKER_TO_WORKER, MPI_COMM_WORLD);
+            MPI_Recv(&glob->A[offset - 1][0], glob->N + 2, MPI_DOUBLE, glob->myrank - 1, WORKER_TO_WORKER, MPI_COMM_WORLD, &status);
+            //printf("%f - Worker %d received above-top row of worker %d, starting with A[%d][%d]=%f\n", MPI_Wtime(), glob->myrank, glob->myrank - 1, offset - 1, 0, glob->A[offset-1][0]);
+            //printf("%f - Worker %d will send top row to worker %d, starting with A[%d][%d]=%f\n", MPI_Wtime(), glob->myrank, glob->myrank - 1, offset, 0, glob->A[offset][0]);
+            MPI_Send(&glob->A[offset    ][0], glob->N + 2, MPI_DOUBLE, glob->myrank - 1, WORKER_TO_WORKER, MPI_COMM_WORLD);
         }
         if(glob->myrank != glob->nproc-1) {
-            //printf("%f - Worker %d will send bottom row to worker %d\n", MPI_Wtime(), glob->myrank, glob->myrank + 1);
-            MPI_Send(&glob->A[offset + n_rows][0], glob->N, MPI_DOUBLE, glob->myrank + 1, WORKER_TO_WORKER, MPI_COMM_WORLD);
-            //printf("%f - Worker %d will receive below-bottom row from worker %d\n", MPI_Wtime(), glob->myrank, glob->myrank + 1);
-            MPI_Recv(&glob->A[offset + n_rows + 1][0], glob->N, MPI_DOUBLE, glob->myrank + 1, WORKER_TO_WORKER, MPI_COMM_WORLD, &status);
+            //printf("%f - Worker %d will send bottom row to worker %d, starting with A[%d][%d]=%f\n", MPI_Wtime(), glob->myrank, glob->myrank + 1, offset + n_rows - 1, 0, glob->A[offset + n_rows - 1][0]);
+            MPI_Send(&glob->A[offset + n_rows - 1][0], glob->N + 2, MPI_DOUBLE, glob->myrank + 1, WORKER_TO_WORKER, MPI_COMM_WORLD);
+            MPI_Recv(&glob->A[offset + n_rows    ][0], glob->N + 2, MPI_DOUBLE, glob->myrank + 1, WORKER_TO_WORKER, MPI_COMM_WORLD, &status);
+            //printf("%f - Worker %d received below-bottom row from worker %d, starting with A[%d][%d]=%f\n", MPI_Wtime(), glob->myrank, glob->myrank + 1, offset + n_rows, 0, glob->A[offset + n_rows][0]);
         }
+
+        //printf("Matrix view of worker %d:\n", glob->myrank);
+        //Print_Matrix();
 
         /* CALCULATE */
         laplace_sor(n_rows, offset, turn);
@@ -172,8 +204,8 @@ work(int n_rows, int offset) {
         if (fabs(maxi - prevmax[turn]) <= glob->difflimit)
             finished = 1;
         if ((iteration % 100) == 0)
-            printf("Iteration: %d, maxi = %f, prevmax[%d] = %f\n",
-                   iteration, maxi, turn, prevmax[turn]);
+            printf("Worker %d Iteration: %d, maxi = %f, prevmax[%d] = %f\n",
+                   glob->myrank, iteration, maxi, turn, prevmax[turn]);
         prevmax[turn] = maxi;
 
         turn = turn == EVEN_TURN ? ODD_TURN : EVEN_TURN;
@@ -303,14 +335,6 @@ Init_Default() {
     glob->PRINT = 1;
     MPI_Comm_size(MPI_COMM_WORLD, &(glob->nproc));
     MPI_Comm_rank(MPI_COMM_WORLD, &(glob->myrank));
-
-    // Dynamically allocate contiguous 2D-array
-    // https://stackoverflow.com/a/29375830
-    int sidelength = glob->N + 2;
-    glob->A = malloc(sidelength * sizeof(double));
-    glob->A[0] = malloc(sidelength * sidelength * sizeof(double));
-    for (int i = 1; i < sidelength; i++)
-        glob->A[i] = glob->A[i-1] + sidelength;
 }
 
 void
