@@ -7,6 +7,7 @@
 \usepackage{algorithm}
 \usepackage{algorithmic}
 \usepackage{appendix}
+\usepackage{placeins}
 
 \newlength{\xdim}
 
@@ -47,65 +48,6 @@
 We do not need to send the number of rows again since it is already known by the master. 
 
 \paragraph{} The work executed by each worker and the master starts by exchanging the extra rows on top and bottom. During the first turn this operation is not really necessary but it will serve for the next since it is needed for the further computations. The first pass of computation is executed respecting the turn we are in (ODD or EVEN). The stopping condition is checked by taking the maximum of each row and keeping only the biggest sum. If this sum is converging (difference between two runs of the same type approaches $0$), the computation is stopped. To do so, each worker is computing its own maximum value and sends it to the master which will check whether to stop or not and send the result back the workers. Then the turn type is switched (ODD or EVEN) and another iteration is started.
-
-\begin{algorithm}
-	\caption{Laplace Approximation row-wise parallel implementation : global algorithm}
-	\label{laplace}
-	\begin{algorithmic}
-		\STATE MPI initialize
-		\STATE matrix initialize
-		\STATE split the matrix
-		\IF{master} 
-			\FOR{p from 1 to number of cores}
-				\STATE MPI Send(offset to worker p)
-				\STATE MPI Send(number of rows to worker p)
-				\STATE MPI Send(matrix to worker p)
-			\ENDFOR
-		\STATE Call work(number of rows, offset)
-			\FOR{p from 1 to number of cores}
-				\STATE MPI Recv(offset from worker p)
-				\STATE MPI Recv(matrix from worker p)
-			\ENDFOR
-		\ELSE 
-			\STATE MPI Recv(offset from master)
-			\STATE MPI Recv(number of rows from master)
-			\STATE MPI Recv(matrix from master)
-			\STATE Call work(number of rows, offset)
-			\STATE MPI Send(offset to master)
-			\STATE MPI Send(matrix to master)
-		\ENDIF
-		\STATE MPI finilize
-	\end{algorithmic}
-\end{algorithm}
-
-\begin{algorithm}
-	\caption{Laplace Approximation row-wise parallel implementation : work function}
-	\label{laplace_work}
-	\begin{algorithmic}
-		\STATE turn = EVEN
-		\WHILE {not finished}
-			\STATE iteration++
-			\IF{not the first row}
-				\STATE MPI Recv(top row from above worker)
-				\STATE MPI Send(top row to above worker)
-			\ENDIF
-			\IF{not the last row}
-				\STATE MPI Send(bottom row to below worker)
-				\STATE MPI Recv(bottom row from below worker)
-			\ENDIF
-			\STATE Computations Laplace Approximation
-			\STATE Max row sum calculation
-			\IF{not the master}
-				\STATE MPI Send(max row sum to master)
-			\ELSE 
-				\STATE Check stopping conditions
-			\ENDIF
-			\STATE MPI Broadcast(finished status to every worker)
-			\STATE turn changing 
-		\ENDWHILE
-		\RETURN iteration
-	\end{algorithmic}
-\end{algorithm}
 
 \section{Measurements}
 
@@ -238,11 +180,70 @@ Figure \ref{fig:maxtrix-mult-chart} shows the runtime breakdown for the MPI vers
 	\label{fig:laplace-sor-chart}
 \end{figure}
 
-\begin{appendices}
-	\chapter{First Appendix}
+\FloatBarrier
+
+\begin{appendix}
+	\section*{Appendix A: Matrix multiplication algorithm}
 	something
-	\chapter{Second Appendix}
-	something
-\end{appendices}
+	\section*{Appendix B: Laplace Approximation global algorithm}
+	\begin{algorithm}
+		\caption{Laplace Approximation row-wise parallel implementation : global algorithm}
+		\label{laplace}
+		\begin{algorithmic}
+			\STATE MPI initialize
+			\STATE matrix initialize
+			\STATE split the matrix
+			\IF{master} 
+			\FOR{p from 1 to number of cores}
+			\STATE MPI Send(offset to worker p)
+			\STATE MPI Send(number of rows to worker p)
+			\STATE MPI Send(matrix to worker p)
+			\ENDFOR
+			\STATE Call work(number of rows, offset)
+			\FOR{p from 1 to number of cores}
+			\STATE MPI Recv(offset from worker p)
+			\STATE MPI Recv(matrix from worker p)
+			\ENDFOR
+			\ELSE 
+			\STATE MPI Recv(offset from master)
+			\STATE MPI Recv(number of rows from master)
+			\STATE MPI Recv(matrix from master)
+			\STATE Call work(number of rows, offset)
+			\STATE MPI Send(offset to master)
+			\STATE MPI Send(matrix to master)
+			\ENDIF
+			\STATE MPI finilize
+		\end{algorithmic}
+	\end{algorithm}
+	\section*{Appendix C: Laplace Approximation work algorithm}
+	\begin{algorithm}
+		\caption{Laplace Approximation row-wise parallel implementation : work function}
+		\label{laplace_work}
+		\begin{algorithmic}
+			\STATE turn = EVEN
+			\WHILE {not finished}
+			\STATE iteration++
+			\IF{not the first row}
+			\STATE MPI Recv(top row from above worker)
+			\STATE MPI Send(top row to above worker)
+			\ENDIF
+			\IF{not the last row}
+			\STATE MPI Send(bottom row to below worker)
+			\STATE MPI Recv(bottom row from below worker)
+			\ENDIF
+			\STATE Computations Laplace Approximation
+			\STATE Max row sum calculation
+			\IF{not the master}
+			\STATE MPI Send(max row sum to master)
+			\ELSE 
+			\STATE Check stopping conditions
+			\ENDIF
+			\STATE MPI Broadcast(finished status to every worker)
+			\STATE turn changing 
+			\ENDWHILE
+			\RETURN iteration
+		\end{algorithmic}
+	\end{algorithm}
+\end{appendix}
 
 \end{document}
