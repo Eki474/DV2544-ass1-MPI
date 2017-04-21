@@ -73,7 +73,8 @@ void Allocate_Matrix()
 
 int
 main(int argc, char **argv) {
-    int timestart, timeend, iter;
+    int iter;
+    double timestart, timeend;
 
     glob = (struct globmem *) malloc(sizeof(struct globmem));
 
@@ -112,7 +113,7 @@ main(int argc, char **argv) {
 
         if (glob->PRINT == 1)
             Print_Matrix();
-        printf("\nNumber of iterations = %d\n", iter);
+        printf("Execution time: %f\n", timeend - timestart);
 
     //workers job
     }else {
