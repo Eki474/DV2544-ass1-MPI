@@ -187,8 +187,6 @@ work(int n_rows, int offset) {
         if(glob->myrank != 0){
             /* Every worker (except for the master) sends their maxi value to the master */
             MPI_Send(&maxi, 1, MPI_DOUBLE, 0, MAXI_FROM_WORKER, MPI_COMM_WORLD);
-            /* Receive the finished flag (in case one worker is finished, all workers have to stop */
-            MPI_Recv(&finished, 1, MPI_INT, 0, FINISHEDFLAG_FROM_MASTER, MPI_COMM_WORLD, &status);
         }else {
             /* Master stops all workers if we hit the terminating condition */
             double maxi_incoming;
@@ -215,12 +213,10 @@ work(int n_rows, int offset) {
                 printf("Max number of iterations reached! Exit!\n");
                 finished = 1;
             }
-
-            // Send finished flag to all workers
-            for(p = 1; p < glob->nproc; p++){
-                MPI_Send(&finished, 1, MPI_INT, p, FINISHEDFLAG_FROM_MASTER, MPI_COMM_WORLD);
-            }
         }
+
+        // Master broadcasts its finished flag
+        MPI_Bcast(&finished, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
         turn = turn == EVEN_TURN ? ODD_TURN : EVEN_TURN;
 
