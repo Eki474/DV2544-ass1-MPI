@@ -25,6 +25,10 @@
 
 \subsection{MPI-based Blocked Matrix-Matrix Multiplication}
 
+\paragraph{} Based on the provided one-dimensional row-based implementation, we created an implementation using a two-dimensional block-wise checkerboard data distribution. This means that for two given matrices $A,B$ with $N \times N$ elements each, every worker will compute $m \times n$ values of the result matrix $C$ with $m,n \leq N$.
+To compute the result value $C_{m,n}$, the $n$th row of matrix $A$ and the $m$th column of matrix $B$ are needed.
+In order to simplify the transfer of the columns of matrix $B$ to the worker nodes, matrix $B$ is transposed in the beginning so it is in column-major order in memory.
+
 \subsection{MPI-based Laplace Approximation}
 
 \paragraph{} First we chose to write the row-wise MPI-implementation of the Laplace Approximation. So we split the matrix on row dimension only given the number of available nodes.
@@ -135,6 +139,8 @@ The measurements were taken on the \emph{kraken.tek.bth.se} Server. The executab
 	\caption{Runtime comparison for matrix multiplication}
 	\label{tab:matrix-mult-runtime}
 \end{figure}
+
+There is a substantial speedup noticeable for the MPI version in comparison to the original sequential values, even when running single-threaded. The explanation for this is most probably that the matrix $B$ is now stored in column-major order in memory, which means that the memory layout now more closely matches the access pattern, allowing for a far better cache-hit ratio.
 
 Figure \ref{fig:maxtrix-mult-chart} shows the runtime breakdown for the MPI version per number of workers. It becomes clear that the percentage of time spent copying back the result matrix increases rapidly, which is because every worker sends back the \emph{whole} \texttt{C} matrix, even though only a small part of it actually contains work results.
 
