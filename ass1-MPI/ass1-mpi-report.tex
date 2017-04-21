@@ -3,6 +3,8 @@
 \usepackage{xcolor}
 \usepackage{tikz}
 \usepackage{pgfplots}
+\usepackage{algorithm}
+\usepackage{algorithmic}
 
 \newlength{\xdim}
 
@@ -42,7 +44,64 @@ We do not need to send the number of rows again since it is already known by the
 
 \paragraph{} The work executed by each worker and the master starts by exchanging the extra rows on top and bottom. During the first turn this operation is not really necessary but it will serve for the next since it is needed for the further computations. The first pass of computation is executed respecting the turn we are in (ODD or EVEN). Now we need to check stopping condition by taking the maximum of each row and keeping only the biggest. To do so we have to synchronized this value between all the workers. Each worker is computing its own maximum value and send it to the master which will check either to stop or not and send the result back the workers. Then we can change the turn (ODD or EVEN) and go back to top of the loop until it is finished. 
 
-%pseudo code ??
+\begin{algorithm}
+	\caption{Laplace Approximation row-wise parallel implementation : global algorithm}
+	\label{laplace}
+	\begin{algorithmic}
+		\STATE MPI initialize
+		\STATE matrix initialize
+		\STATE split the matrix
+		\IF{master} 
+			\FOR{p from 1 to number of cores}
+				\STATE MPI Send(offset to worker p)
+				\STATE MPI Send(number of rows to worker p)
+				\STATE MPI Send(matrix to worker p)
+			\ENDFOR
+		\STATE Call work(number of rows, offset)
+			\FOR{p from 1 to number of cores}
+				\STATE MPI Recv(offset from worker p)
+				\STATE MPI Recv(matrix from worker p)
+			\ENDFOR
+		\ELSE 
+			\STATE MPI Recv(offset from master)
+			\STATE MPI Recv(number of rows from master)
+			\STATE MPI Recv(matrix from master)
+			\STATE Call work(number of rows, offset)
+			\STATE MPI Send(offset to master)
+			\STATE MPI Send(matrix to master)
+		\ENDIF
+		\STATE MPI finilize
+	\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+	\caption{Laplace Approximation row-wise parallel implementation : work function}
+	\label{laplace_work}
+	\begin{algorithmic}
+		\STATE turn = EVEN
+		\WHILE {not finished}
+			\STATE iteration++
+			\IF{not the first row}
+				\STATE MPI Recv(top row from above worker)
+				\STATE MPI Send(top row to above worker)
+			\ENDIF
+			\IF{not the last row}
+				\STATE MPI Send(bottom row to below worker)
+				\STATE MPI Recv(bottom row from below worker)
+			\ENDIF
+			\STATE Computations Laplace Approximation
+			\STATE Max row sum calculation
+			\IF{not the master}
+				\STATE MPI Send(max row sum to master)
+			\ELSE 
+				\STATE Check stopping conditions
+			\ENDIF
+			\STATE MPI Broadcast(finished status to every worker)
+			\STATE turn changing 
+		\ENDWHILE
+		\RETURN iteration
+	\end{algorithmic}
+\end{algorithm}
 
 \section{Measurements}
 
