@@ -2,7 +2,7 @@ SRCS=$(wildcard *.c)
 BINS=$(SRCS:%.c=%)
 
 MPICC=mpicc
-CFLAGS=-Wall -g -O3
+CFLAGS=-Wall -g -O2
 
 all: $(BINS) 
 
