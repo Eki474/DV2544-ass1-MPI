@@ -113,7 +113,7 @@ main(int argc, char **argv) {
 
         if (glob->PRINT == 1)
             Print_Matrix();
-        printf("Execution time: %f\n", timeend - timestart);
+        printf("Execution time on %d nodes: %f\n", glob->nproc, timeend - timestart);
 
     //workers job
     }else {
