@@ -21,7 +21,28 @@
 
 \subsection{MPI-based Blocked Matrix-Matrix Multiplication}
 
-\subsection{MPI-based LaPlace Approximation}
+\subsection{MPI-based Laplace Approximation}
+
+\paragraph{} First we chose to write the row-wise MPI-implementation of the Laplace Approximation. So we split the matrix on row dimension only given the number of cores set.
+\paragraph{} After splitting the matrix we have to send each part to the workers. Each worker will receive : 
+\begin{itemize}
+	\item offset : the chunk position in the whole matrix; 
+	\item rows : the number of rows the worker have to compute;
+	\item  matrix : the matrix part the worker should compute with the extra rows and columns needed for the computation (one after and one before). 
+\end{itemize}
+
+\paragraph{} The master will then do its part of the computation and wait to receive the results of the workers. 
+
+\paragraph{} The workers will receive their data and start the computation, after computation they will send back the results to the master : 
+\begin{itemize}
+	\item offset;
+	\item result matrix.
+\end{itemize}
+We do not need to send the number of rows again since it is already known by the master. 
+
+\paragraph{} The work executed by each worker and the master starts by exchanging the extra rows on top and bottom. During the first turn this operation is not really necessary but it will serve for the next since it is needed for the further computations. The first pass of computation is executed respecting the turn we are in (ODD or EVEN). Now we need to check stopping condition by taking the maximum of each row and keeping only the biggest. To do so we have to synchronized this value between all the workers. Each worker is computing its own maximum value and send it to the master which will check either to stop or not and send the result back the workers. Then we can change the turn (ODD or EVEN) and go back to top of the loop until it is finished. 
+
+%pseudo code ??
 
 \section{Measurements}
 
