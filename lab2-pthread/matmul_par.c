@@ -10,7 +10,7 @@
 #include <assert.h>
 
 #define SIZE 1024
-#define NUM_THREADS 1024
+#define NUM_THREADS 8
 
 static double a[SIZE][SIZE];
 static double b[SIZE][SIZE];
@@ -80,11 +80,11 @@ main(int argc, char **argv)
     assert(SIZE % NUM_THREADS == 0);
     int rowsPerThread = SIZE / NUM_THREADS;
 
-    for (int i=0; i<SIZE; i+= rowsPerThread)
+    for (int i=0; i<NUM_THREADS; i++)
     {
         MatmulParamT* params = malloc(sizeof(MatmulParamT));
         params->num_rows = rowsPerThread;
-        params->offset = i;
+        params->offset = i*rowsPerThread;
 
         if(pthread_create(&threads[i], NULL, &matmul_wrapper, params))
         {
