@@ -1,5 +1,6 @@
 \documentclass[]{article}
 
+\usepackage[top=2cm, bottom=2.5cm, left=2.0cm, right=2.0cm]{geometry}
 \usepackage{xcolor}
 \usepackage{tikz}
 \usepackage{pgfplots}
@@ -156,7 +157,7 @@ Figure \ref{fig:maxtrix-mult-chart} shows the runtime breakdown for the MPI vers
 	xtick={0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0},
 	width=1.0\textwidth,
 	bar width=6mm,
-	xlabel={Time in ms},
+	xlabel={Time in s},
 	yticklabels={1, 2, 4, 8},
 	xmin=0,
 	xmax=3.0,
@@ -177,7 +178,7 @@ Figure \ref{fig:maxtrix-mult-chart} shows the runtime breakdown for the MPI vers
 
 \subsection{MPI-based LaPlace Approximation}
 
- Table \ref{tab:laplace-sor-runtime} shows the runtimes of the different versions of the row-based LaPlace approximation using successive over-relaxation.
+ Table \ref{tab:laplace-sor-runtime} shows the runtimes of the different versions of the row-based LaPlace approximation using successive over-relaxation. Figure \ref{fig:laplace-sor-chart} also visualizes this.
 
 \begin{figure}[h]
 	\centering
@@ -198,6 +199,42 @@ Figure \ref{fig:maxtrix-mult-chart} shows the runtime breakdown for the MPI vers
 	\end{tabular} 
 	\caption{Runtime comparison for LaPlace approximation}
 	\label{tab:laplace-sor-runtime}
+\end{figure}
+
+\begin{figure}[h]
+	\centering
+	\begin{tikzpicture}
+	\begin{axis}[
+	xbar stacked,
+	legend style={
+		legend columns=4,
+		at={(xticklabel cs:0.5)},
+		anchor=north,
+		draw=none
+	},
+	ytick=data,
+	axis y line*=none,
+	axis x line*=bottom,
+	tick label style={font=\footnotesize},
+	legend style={font=\footnotesize},
+	label style={font=\footnotesize},
+	xtick={0, 10.0, 20.0, 30.0, 40.0, 50.0},
+	width=1.0\textwidth,
+	bar width=6mm,
+	xlabel={Time in s},
+	yticklabels={seq, 1, 2, 4, 8},
+	xmin=0,
+	xmax=50.0,
+	area legend,
+	y=8mm,
+	enlarge y limits={abs=0.625},
+	]
+	\addplot[calculate,fill=calculate] coordinates
+	{(41.03,4) (41.42,3) (23.85,2) (16.45,1) (13.56, 0)};
+	\end{axis}  
+	\end{tikzpicture}
+	\caption{Runtime comparison chart for LaPlace approximation}
+	\label{fig:laplace-sor-chart}
 \end{figure}
 
 \end{document}
