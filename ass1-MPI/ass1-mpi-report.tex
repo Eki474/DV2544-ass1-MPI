@@ -48,7 +48,7 @@ We do not need to send the number of rows again since it is already known by the
 
 The measurements were taken on the \emph{kraken.tek.bth.se} Server. The executables were compiled with the \texttt{-O3} option, to enable compiler optimizations. Every measurement was taken 10 times and the smallest value was used. Table \ref{tab:matrix-mult-runtime} shows the runtimes of the different versions.
 
-\begin{figure}
+\begin{figure}[h]
 	\centering
 	\begin{tabular}{|l|r|}
 		\hline
@@ -71,7 +71,7 @@ The measurements were taken on the \emph{kraken.tek.bth.se} Server. The executab
 
 Figure \ref{fig:maxtrix-mult-chart} shows the runtime breakdown for the MPI version per number of workers. It becomes clear that the percentage of time spent copying back the result matrix increases rapidly, which is because every worker sends back the \emph{whole} \texttt{C} matrix, even though only a small part of it actually contains work results.
 
-\begin{figure}
+\begin{figure}[h]
 	\centering
 	\begin{tikzpicture}
 	\begin{axis}[

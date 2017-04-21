@@ -22,7 +22,7 @@
 /* message types */
 #define FROM_MASTER 1
 #define FROM_WORKER 2
-#define FINISHEDFLAG_FROM_WORKER 3
+#define MAXI_FROM_WORKER 3
 #define FINISHEDFLAG_FROM_MASTER 4
 #define WORKER_TO_WORKER 5
 
@@ -73,19 +73,20 @@ void Allocate_Matrix()
 
 int
 main(int argc, char **argv) {
-    int timestart, timeend, iter;
+    int iter;
+    double timestart, timeend;
 
     glob = (struct globmem *) malloc(sizeof(struct globmem));
 
     MPI_Init(&argc, &argv);
 
-    printf("SIZE = %d, number of nodes = %d\n", glob->N, glob->nproc);
     Init_Default();        /* Init default values	*/
     Read_Options(argc, argv);    /* Read arguments	*/
     Allocate_Matrix();
 
     //master job
     if(glob->myrank == 0) {
+        printf("SIZE = %d, number of nodes = %d\n", glob->N, glob->nproc);
         Init_Matrix();        /* Init the matrix	*/
         timestart = MPI_Wtime();
 
@@ -109,9 +110,11 @@ main(int argc, char **argv) {
             MPI_Recv(&glob->A[offset][0], rows * (glob->N + 2), MPI_DOUBLE, i, FROM_WORKER, MPI_COMM_WORLD, &status);
         }
         timeend = MPI_Wtime();
+
         if (glob->PRINT == 1)
             Print_Matrix();
-        printf("\nNumber of iterations = %d\n", iter);
+        printf("Execution time on %d nodes: %f\n", glob->nproc, timeend - timestart);
+
     //workers job
     }else {
         int nb_rows, offset;
@@ -124,7 +127,6 @@ main(int argc, char **argv) {
         MPI_Send(&offset, 1, MPI_INT, 0, FROM_WORKER, MPI_COMM_WORLD);
         MPI_Send(&glob->A[offset][0], nb_rows * (glob->N + 2), MPI_DOUBLE, 0, FROM_WORKER, MPI_COMM_WORLD);
     }
-
 
     MPI_Finalize();
     return 0;
@@ -162,19 +164,12 @@ work(int n_rows, int offset) {
         // Exchange rows between workers
         if(glob->myrank != 0) {
             MPI_Recv(&glob->A[offset - 1][0], glob->N + 2, MPI_DOUBLE, glob->myrank - 1, WORKER_TO_WORKER, MPI_COMM_WORLD, &status);
-            //printf("%f - Worker %d received above-top row of worker %d, starting with A[%d][%d]=%f\n", MPI_Wtime(), glob->myrank, glob->myrank - 1, offset - 1, 0, glob->A[offset-1][0]);
-            //printf("%f - Worker %d will send top row to worker %d, starting with A[%d][%d]=%f\n", MPI_Wtime(), glob->myrank, glob->myrank - 1, offset, 0, glob->A[offset][0]);
             MPI_Send(&glob->A[offset    ][0], glob->N + 2, MPI_DOUBLE, glob->myrank - 1, WORKER_TO_WORKER, MPI_COMM_WORLD);
         }
         if(glob->myrank != glob->nproc-1) {
-            //printf("%f - Worker %d will send bottom row to worker %d, starting with A[%d][%d]=%f\n", MPI_Wtime(), glob->myrank, glob->myrank + 1, offset + n_rows - 1, 0, glob->A[offset + n_rows - 1][0]);
             MPI_Send(&glob->A[offset + n_rows - 1][0], glob->N + 2, MPI_DOUBLE, glob->myrank + 1, WORKER_TO_WORKER, MPI_COMM_WORLD);
             MPI_Recv(&glob->A[offset + n_rows    ][0], glob->N + 2, MPI_DOUBLE, glob->myrank + 1, WORKER_TO_WORKER, MPI_COMM_WORLD, &status);
-            //printf("%f - Worker %d received below-bottom row from worker %d, starting with A[%d][%d]=%f\n", MPI_Wtime(), glob->myrank, glob->myrank + 1, offset + n_rows, 0, glob->A[offset + n_rows][0]);
         }
-
-        //printf("Matrix view of worker %d:\n", glob->myrank);
-        //Print_Matrix();
 
         /* CALCULATE */
         laplace_sor(n_rows, offset, turn);
@@ -188,14 +183,41 @@ work(int n_rows, int offset) {
             if (sum > maxi)
                 maxi = sum;
         }
-        /* Compare the sum with the prev sum, i.e., check wether
-         * we are finished or not. */
-        if (fabs(maxi - prevmax[turn]) <= glob->difflimit)
-            finished = 1;
-        if ((iteration % 100) == 0)
-            printf("Worker %d Iteration: %d, maxi = %f, prevmax[%d] = %f\n",
-                   glob->myrank, iteration, maxi, turn, prevmax[turn]);
-        prevmax[turn] = maxi;
+
+        // Synchronize maximum value and determine if we are finished
+        if(glob->myrank != 0){
+            /* Every worker (except for the master) sends their maxi value to the master */
+            MPI_Send(&maxi, 1, MPI_DOUBLE, 0, MAXI_FROM_WORKER, MPI_COMM_WORLD);
+        }else {
+            /* Master stops all workers if we hit the terminating condition */
+            double maxi_incoming;
+            int p;
+            for(p = 1; p < glob->nproc; p++){
+                MPI_Recv(&maxi_incoming, 1, MPI_DOUBLE, p, MAXI_FROM_WORKER, MPI_COMM_WORLD, &status);
+                maxi = maxi_incoming > maxi ? maxi_incoming : maxi;
+            }
+
+            /* Compare the sum with the prev sum, i.e., check wether
+             * we are finished or not. */
+            if (fabs(maxi - prevmax[turn]) <= glob->difflimit)
+            {
+                finished = 1;
+                printf("Finished! Iteration: %d, maxi = %f, prevmax[%d] = %f\n", iteration, maxi, turn, prevmax[turn]);
+            }
+            prevmax[turn] = maxi;
+
+            if ((iteration % 100) == 0)
+                printf("Iteration: %d, maxi = %f, prevmax[%d] = %f\n", iteration, maxi, turn, prevmax[turn]);
+
+            if (iteration > 100000) {
+                /* exit if we don't converge fast enough */
+                printf("Max number of iterations reached! Exit!\n");
+                finished = 1;
+            }
+        }
+
+        // Master broadcasts its finished flag
+        MPI_Bcast(&finished, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
         turn = turn == EVEN_TURN ? ODD_TURN : EVEN_TURN;
 
@@ -203,28 +225,6 @@ work(int n_rows, int offset) {
             /* something is very wrong... */
             printf("PANIC: Something is really wrong!!!\n");
             exit(-1);
-        }
-        if (iteration > 100000) {
-            /* exit if we don't converge fast enough */
-            printf("Max number of iterations reached! Exit!\n");
-            finished = 1;
-        }
-        if(glob->myrank != 0){
-            /* Every worker (except for the master) sends their finished flag to the master */
-            MPI_Send(&finished, 1, MPI_INT, 0, FINISHEDFLAG_FROM_WORKER, MPI_COMM_WORLD);
-            /* Receive the finished flag (in case one worker is finished, all workers have to stop */
-            MPI_Recv(&finished, 1, MPI_INT, 0, FINISHEDFLAG_FROM_MASTER, MPI_COMM_WORLD, &status);
-        }else {
-            /* Master stops all workers if at least one worker hit the terminating condition */
-            int temp = 0;
-            int p;
-            for(p = 1; p < glob->nproc; p++){
-                MPI_Recv(&temp, 1, MPI_INT, p, FINISHEDFLAG_FROM_WORKER, MPI_COMM_WORLD, &status);
-                finished = finished || temp;
-            }
-            for(p = 1; p < glob->nproc; p++){
-                MPI_Send(&finished, 1, MPI_INT, p, FINISHEDFLAG_FROM_MASTER, MPI_COMM_WORLD);
-            }
         }
     }
     return iteration;
@@ -274,6 +274,13 @@ Init_Matrix() {
                     glob->A[i][j] = 1.0;
                 else
                     glob->A[i][j] = 5.0;
+            }
+        }
+    }
+    if (strcmp(glob->Init, "test") == 0) {
+        for (i = 1; i < N + 1; i++) {
+            for (j = 1; j < N + 1; j++) {
+                glob->A[i][j] = (float)i * N + j;
             }
         }
     }
