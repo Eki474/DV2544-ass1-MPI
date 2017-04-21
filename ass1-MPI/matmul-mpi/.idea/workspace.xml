@@ -47,10 +47,10 @@
       <file leaf-file-name="laplace_sor_mpi.c" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/../laplace_sor_mpi.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="585">
-              <caret line="168" column="43" lean-forward="true" selection-start-line="168" selection-start-column="43" selection-end-line="168" selection-end-column="43" />
+            <state relative-caret-position="576">
+              <caret line="146" column="9" lean-forward="false" selection-start-line="146" selection-start-column="9" selection-end-line="146" selection-end-column="9" />
               <folding>
-                <element signature="e#11053#13470#0" expanded="false" />
+                <element signature="e#10416#12833#0" expanded="false" />
               </folding>
             </state>
           </provider>
@@ -358,12 +358,12 @@
       <workItem from="1492608972531" duration="7701000" />
       <workItem from="1492618319369" duration="599000" />
       <workItem from="1492698410776" duration="3109000" />
-      <workItem from="1492784299420" duration="1155000" />
+      <workItem from="1492784299420" duration="1581000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="19498000" />
+    <option name="totallyTimeSpent" value="19924000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="27" width="1366" height="741" extended-state="6" />
@@ -423,7 +423,7 @@
         <state relative-caret-position="3114">
           <caret line="173" column="0" lean-forward="false" selection-start-line="173" selection-start-column="0" selection-end-line="173" selection-end-column="0" />
           <folding>
-            <element signature="e#11053#13470#0" expanded="false" />
+            <element signature="e#10416#12833#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -449,7 +449,7 @@
         <state relative-caret-position="612">
           <caret line="34" column="42" lean-forward="false" selection-start-line="34" selection-start-column="42" selection-end-line="34" selection-end-column="42" />
           <folding>
-            <element signature="e#11053#13470#0" expanded="false" />
+            <element signature="e#10416#12833#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -475,7 +475,7 @@
         <state relative-caret-position="612">
           <caret line="34" column="42" lean-forward="true" selection-start-line="34" selection-start-column="42" selection-end-line="34" selection-end-column="42" />
           <folding>
-            <element signature="e#11053#13470#0" expanded="false" />
+            <element signature="e#10416#12833#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -501,7 +501,7 @@
         <state relative-caret-position="4590">
           <caret line="255" column="37" lean-forward="false" selection-start-line="255" selection-start-column="37" selection-end-line="255" selection-end-column="37" />
           <folding>
-            <element signature="e#11053#13470#0" expanded="false" />
+            <element signature="e#10416#12833#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -519,7 +519,7 @@
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
-            <element signature="e#11053#13470#0" expanded="false" />
+            <element signature="e#10416#12833#0" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -579,10 +579,10 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/../laplace_sor_mpi.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="585">
-          <caret line="168" column="43" lean-forward="true" selection-start-line="168" selection-start-column="43" selection-end-line="168" selection-end-column="43" />
+        <state relative-caret-position="576">
+          <caret line="146" column="9" lean-forward="false" selection-start-line="146" selection-start-column="9" selection-end-line="146" selection-end-column="9" />
           <folding>
-            <element signature="e#11053#13470#0" expanded="false" />
+            <element signature="e#10416#12833#0" expanded="false" />
           </folding>
         </state>
       </provider>

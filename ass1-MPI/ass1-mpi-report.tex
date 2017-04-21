@@ -40,7 +40,9 @@
 \end{itemize}
 We do not need to send the number of rows again since it is already known by the master. 
 
-\paragraph{} The work executed by each worker and the master starts by exchanging the extra rows on top and bottom. During the first turn this operation is not really necessary but it will serve for the next since it is needed for the further computations. The first pass of computation is executed respecting the turn we are in (ODD or EVEN). Now we need to check stopping condition by taking the maximum of each row and keeping only the biggest. To do so we have to synchronized this value between all the workers. Each worker is computing its own maximum value
+\paragraph{} The work executed by each worker and the master starts by exchanging the extra rows on top and bottom. During the first turn this operation is not really necessary but it will serve for the next since it is needed for the further computations. The first pass of computation is executed respecting the turn we are in (ODD or EVEN). Now we need to check stopping condition by taking the maximum of each row and keeping only the biggest. To do so we have to synchronized this value between all the workers. Each worker is computing its own maximum value and send it to the master which will check either to stop or not and send the result back the workers. Then we can change the turn (ODD or EVEN) and go back to top of the loop until it is finished. 
+
+%pseudo code ??
 
 \section{Measurements}
 
