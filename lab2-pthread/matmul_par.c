@@ -7,8 +7,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <assert.h>
 
 #define SIZE 1024
+#define NUM_THREADS 1024
 
 static double a[SIZE][SIZE];
 static double b[SIZE][SIZE];
@@ -75,11 +77,14 @@ main(int argc, char **argv)
     init_matrix();
 
     // Start threads
-    for (int i=0; i<SIZE; i++)
+    assert(SIZE % NUM_THREADS == 0);
+    int rowsPerThread = SIZE / NUM_THREADS;
+
+    for (int i=0; i<SIZE; i+= rowsPerThread)
     {
         MatmulParamT* params = malloc(sizeof(MatmulParamT));
-        params->num_rows = 1;
-        params->num_rows = i;
+        params->num_rows = rowsPerThread;
+        params->offset = i;
 
         if(pthread_create(&threads[i], NULL, &matmul_wrapper, params))
         {
