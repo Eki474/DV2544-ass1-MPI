@@ -1,5 +1,6 @@
 \documentclass[]{article}
 
+\usepackage[top=2cm, bottom=2.5cm, left=2.0cm, right=2.0cm]{geometry}
 \usepackage{xcolor}
 \usepackage{tikz}
 \usepackage{pgfplots}
@@ -26,13 +27,15 @@
 
 \subsection{MPI-based Laplace Approximation}
 
-\paragraph{} First we chose to write the row-wise MPI-implementation of the Laplace Approximation. So we split the matrix on row dimension only given the number of cores set.
+\paragraph{} First we chose to write the row-wise MPI-implementation of the Laplace Approximation. So we split the matrix on row dimension only given the number of available nodes.
 \paragraph{} After splitting the matrix we have to send each part to the workers. Each worker will receive : 
 \begin{itemize}
 	\item offset : the chunk position in the whole matrix; 
 	\item rows : the number of rows the worker have to compute;
-	\item  matrix : the matrix part the worker should compute with the extra rows and columns needed for the computation (one after and one before). 
+	\item matrix : the matrix part the worker should compute with the extra rows and columns needed for the computation (one after and one before). 
 \end{itemize}
+
+\paragraph{} Since the original implementation allocates always a memory block of \texttt{MAX\_SIZE} $\times$ \texttt{MAX\_SIZE}, the matrix rows are not adjacent in memory. To circumvent this problem, our implementation dynamically allocates exactly the needed amount of memory, leading to a memory layout in which matrix rows are adjacent. This allows to send multiple rows at once and helps to avoid excessive amounts of \texttt{MPI\_Send()} calls.
 
 \paragraph{} The master will then do its part of the computation and wait to receive the results of the workers. 
 
@@ -43,7 +46,7 @@
 \end{itemize}
 We do not need to send the number of rows again since it is already known by the master. 
 
-\paragraph{} The work executed by each worker and the master starts by exchanging the extra rows on top and bottom. During the first turn this operation is not really necessary but it will serve for the next since it is needed for the further computations. The first pass of computation is executed respecting the turn we are in (ODD or EVEN). Now we need to check stopping condition by taking the maximum of each row and keeping only the biggest. To do so we have to synchronized this value between all the workers. Each worker is computing its own maximum value and send it to the master which will check either to stop or not and send the result back the workers. Then we can change the turn (ODD or EVEN) and go back to top of the loop until it is finished. 
+\paragraph{} The work executed by each worker and the master starts by exchanging the extra rows on top and bottom. During the first turn this operation is not really necessary but it will serve for the next since it is needed for the further computations. The first pass of computation is executed respecting the turn we are in (ODD or EVEN). The stopping condition is checked by taking the maximum of each row and keeping only the biggest sum. If this sum is converging (difference between two runs of the same type approaches $0$), the computation is stopped. To do so, each worker is computing its own maximum value and sends it to the master which will check whether to stop or not and send the result back the workers. Then the turn type is switched (ODD or EVEN) and another iteration is started.
 
 \begin{algorithm}
 	\caption{Laplace Approximation row-wise parallel implementation : global algorithm}
@@ -106,25 +109,27 @@ We do not need to send the number of rows again since it is already known by the
 
 \section{Measurements}
 
+The measurements were taken on the \emph{kraken.tek.bth.se} Server. The executables were compiled with the \texttt{-O2} option, to enable compiler optimizations. Every measurement was taken 10 times and the smallest value was used to account for background load and operating system caches.
+
 \subsection{MPI-based Blocked Matrix-Matrix Multiplication}
 
-The measurements were taken on the \emph{kraken.tek.bth.se} Server. The executables were compiled with the \texttt{-O3} option, to enable compiler optimizations. Every measurement was taken 10 times and the smallest value was used. Table \ref{tab:matrix-mult-runtime} shows the runtimes of the different versions.
+ Table \ref{tab:matrix-mult-runtime} shows the runtimes of the different versions of the blocked matrix-matrix multiplication.
 
 \begin{figure}[h]
 	\centering
-	\begin{tabular}{|l|r|}
+	\begin{tabular}{|l|r|r|}
 		\hline
-		\textbf{Version} & \textbf{shortest runtime [s]} \\
+		\textbf{Version} & \textbf{shortest runtime [s]} & \textbf{speedup} \\
 		\hline
-		Sequential single-threaded & 30.40 \\ 
+		Sequential single-threaded	& 30.40	& 1.0 \\ 
 		\hline 
-		MPI 1 thread & 2.54 \\ 
+		MPI 1 thread				& 2.54	& 11.97 \\ 
 		\hline 
-		MPI 2 threads & 0.95 \\ 
+		MPI 2 threads				& 0.95	& 32.00 \\ 
 		\hline 
-		MPI 4 threads & 0.57 \\ 
+		MPI 4 threads				& 0.57	& 53.33 \\ 
 		\hline 
-		MPI 8 threads & 0.47 \\ 
+		MPI 8 threads				& 0.47	& 64.68 \\ 
 		\hline 
 	\end{tabular} 
 	\caption{Runtime comparison for matrix multiplication}
@@ -153,7 +158,7 @@ Figure \ref{fig:maxtrix-mult-chart} shows the runtime breakdown for the MPI vers
 	xtick={0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0},
 	width=1.0\textwidth,
 	bar width=6mm,
-	xlabel={Time in ms},
+	xlabel={Time in s},
 	yticklabels={1, 2, 4, 8},
 	xmin=0,
 	xmax=3.0,
@@ -173,6 +178,65 @@ Figure \ref{fig:maxtrix-mult-chart} shows the runtime breakdown for the MPI vers
 \end{figure}
 
 \subsection{MPI-based LaPlace Approximation}
+
+ Table \ref{tab:laplace-sor-runtime} shows the runtimes of the different versions of the row-based LaPlace approximation using successive over-relaxation. Figure \ref{fig:laplace-sor-chart} also visualizes this.
+
+\begin{figure}[h]
+	\centering
+	\begin{tabular}{|l|r|r|}
+		\hline
+		\textbf{Version} & \textbf{shortest runtime [s]} & \textbf{speedup} \\
+		\hline
+		Sequential single-threaded	& 41.03 & 1.00 \\ 
+		\hline 
+		MPI 1 thread				& 41.42 & 0.99 \\ 
+		\hline 
+		MPI 2 threads				& 23.85 & 1.72 \\ 
+		\hline 
+		MPI 4 threads 				& 16.45 & 2.49 \\ 
+		\hline 
+		MPI 8 threads				& 13.56 & 3.05 \\ 
+		\hline 
+	\end{tabular} 
+	\caption{Runtime comparison for LaPlace approximation}
+	\label{tab:laplace-sor-runtime}
+\end{figure}
+
+\begin{figure}[h]
+	\centering
+	\begin{tikzpicture}
+	\begin{axis}[
+	xbar stacked,
+	legend style={
+		legend columns=4,
+		at={(xticklabel cs:0.5)},
+		anchor=north,
+		draw=none
+	},
+	ytick=data,
+	axis y line*=none,
+	axis x line*=bottom,
+	tick label style={font=\footnotesize},
+	legend style={font=\footnotesize},
+	label style={font=\footnotesize},
+	xtick={0, 10.0, 20.0, 30.0, 40.0, 50.0},
+	width=1.0\textwidth,
+	bar width=6mm,
+	xlabel={Time in s},
+	yticklabels={seq, 1, 2, 4, 8},
+	xmin=0,
+	xmax=50.0,
+	area legend,
+	y=8mm,
+	enlarge y limits={abs=0.625},
+	]
+	\addplot[calculate,fill=calculate] coordinates
+	{(41.03,4) (41.42,3) (23.85,2) (16.45,1) (13.56, 0)};
+	\end{axis}  
+	\end{tikzpicture}
+	\caption{Runtime comparison chart for LaPlace approximation}
+	\label{fig:laplace-sor-chart}
+\end{figure}
 
 \begin{appendices}
 	\chapter{First Appendix}
