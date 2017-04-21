@@ -2,4 +2,9 @@
 *.log
 *.pdf
 *.synctex.gz
-
+a.out
+multiprocessor_systems.config
+multiprocessor_systems.creator
+multiprocessor_systems.creator.user
+multiprocessor_systems.files
+multiprocessor_systems.includes
