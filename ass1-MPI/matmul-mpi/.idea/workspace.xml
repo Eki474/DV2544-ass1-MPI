@@ -10,7 +10,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="6604d642-2aeb-4f2b-8ee5-bc9fe21ffa79" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../ass1-mpi-report.tex" afterPath="$PROJECT_DIR$/../ass1-mpi-report.tex" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="$PROJECT_DIR$/cmake-build-debug/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -46,7 +46,7 @@
       <file leaf-file-name="laplace_sor_mpi.c" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/../laplace_sor_mpi.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-1260">
+            <state relative-caret-position="792">
               <caret line="146" column="9" lean-forward="false" selection-start-line="146" selection-start-column="9" selection-end-line="146" selection-end-column="9" />
               <folding>
                 <element signature="e#10416#12833#0" expanded="false" />
@@ -578,7 +578,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/../laplace_sor_mpi.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-1260">
+        <state relative-caret-position="792">
           <caret line="146" column="9" lean-forward="false" selection-start-line="146" selection-start-column="9" selection-end-line="146" selection-end-column="9" />
           <folding>
             <element signature="e#10416#12833#0" expanded="false" />
