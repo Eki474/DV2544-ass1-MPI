@@ -83,10 +83,9 @@ main(int argc, char **argv) {
     Read_Options(argc, argv);    /* Read arguments	*/
     Allocate_Matrix();
 
-    printf("SIZE = %d, number of nodes = %d\n", glob->N, glob->nproc);
-
     //master job
     if(glob->myrank == 0) {
+        printf("SIZE = %d, number of nodes = %d\n", glob->N, glob->nproc);
         Init_Matrix();        /* Init the matrix	*/
         timestart = MPI_Wtime();
 
@@ -135,21 +134,17 @@ main(int argc, char **argv) {
 /* Execute one turn of the SOR algorithm on a chunk of data */
 void laplace_sor(int n_rows, int offset, int isOddTurn)
 {
-    //printf("Worker %d laplace_sor from row %d to %d\n", glob->myrank, offset, offset + n_rows);
     int n_cols = glob->N;
     double w = glob->w;
     for (int m = offset; m < offset + n_rows; m++) {
-        //printf("worker %d row %d, first elem is %f\n", glob->myrank, m, glob->A[m][0]);
         for (int n = 1; n < n_cols + 1; n++) {
             if (((m + n) % 2) == isOddTurn) {
                 glob->A[m][n] = (1 - w) * glob->A[m][n]
                                 + w * (glob->A[m - 1][n] + glob->A[m + 1][n]
                                        + glob->A[m][n - 1] + glob->A[m][n + 1]) / 4;
-                //printf("%d [%d][%d]=%f ", glob->myrank, m, n, glob->A[m][n]);
             }
         }
     }
-    //printf("\n");
 }
 
 int
@@ -168,47 +163,15 @@ work(int n_rows, int offset) {
         // Exchange rows between workers
         if(glob->myrank != 0) {
             MPI_Recv(&glob->A[offset - 1][0], glob->N + 2, MPI_DOUBLE, glob->myrank - 1, WORKER_TO_WORKER, MPI_COMM_WORLD, &status);
-            //printf("%f - Worker %d received above-top row of worker %d, starting with A[%d][%d]=%f\n", MPI_Wtime(), glob->myrank, glob->myrank - 1, offset - 1, 0, glob->A[offset-1][0]);
-            //printf("%f - Worker %d will send top row to worker %d, starting with A[%d][%d]=%f\n", MPI_Wtime(), glob->myrank, glob->myrank - 1, offset, 0, glob->A[offset][0]);
             MPI_Send(&glob->A[offset    ][0], glob->N + 2, MPI_DOUBLE, glob->myrank - 1, WORKER_TO_WORKER, MPI_COMM_WORLD);
         }
         if(glob->myrank != glob->nproc-1) {
-            //printf("%f - Worker %d will send bottom row to worker %d, starting with A[%d][%d]=%f\n", MPI_Wtime(), glob->myrank, glob->myrank + 1, offset + n_rows - 1, 0, glob->A[offset + n_rows - 1][0]);
             MPI_Send(&glob->A[offset + n_rows - 1][0], glob->N + 2, MPI_DOUBLE, glob->myrank + 1, WORKER_TO_WORKER, MPI_COMM_WORLD);
             MPI_Recv(&glob->A[offset + n_rows    ][0], glob->N + 2, MPI_DOUBLE, glob->myrank + 1, WORKER_TO_WORKER, MPI_COMM_WORLD, &status);
-            //printf("%f - Worker %d received below-bottom row from worker %d, starting with A[%d][%d]=%f\n", MPI_Wtime(), glob->myrank, glob->myrank + 1, offset + n_rows, 0, glob->A[offset + n_rows][0]);
         }
 
         /* CALCULATE */
         laplace_sor(n_rows, offset, turn);
-
-        /*
-        // DEBUG FOO
-        int foo;
-        MPI_Barrier(MPI_COMM_WORLD);
-        if(glob->myrank == 0 && glob->nproc > 1)
-        {
-            printf("\nI %d Matrix view of worker %d:\n", iteration, glob->myrank);
-            Print_Matrix();
-            MPI_Send(&foo, 1, MPI_INT, glob->myrank+1, WORKER_TO_WORKER, MPI_COMM_WORLD);
-        }
-        else if(glob->myrank == glob->nproc-1)
-        {
-            MPI_Recv(&foo, 1, MPI_INT, glob->myrank-1, WORKER_TO_WORKER, MPI_COMM_WORLD, &status);
-            printf("\nI %d Matrix view of worker %d:\n", iteration, glob->myrank);
-            Print_Matrix();
-        }
-        else
-        {
-            MPI_Recv(&foo, 1, MPI_INT, glob->myrank-1, WORKER_TO_WORKER, MPI_COMM_WORLD, &status);
-            printf("\nI %d Matrix view of worker %d:\n", iteration, glob->myrank);
-            Print_Matrix();
-            MPI_Send(&foo, 1, MPI_INT, glob->myrank+1, WORKER_TO_WORKER, MPI_COMM_WORLD);
-        }
-        MPI_Barrier(MPI_COMM_WORLD);
-        // END DEBUG FOO
-        */
-
 
         /* Calculate the maximum sum of the elements */
         maxi = DBL_MIN;
