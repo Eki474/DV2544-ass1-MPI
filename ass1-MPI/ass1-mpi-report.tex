@@ -25,13 +25,15 @@
 
 \subsection{MPI-based Laplace Approximation}
 
-\paragraph{} First we chose to write the row-wise MPI-implementation of the Laplace Approximation. So we split the matrix on row dimension only given the number of cores set.
+\paragraph{} First we chose to write the row-wise MPI-implementation of the Laplace Approximation. So we split the matrix on row dimension only given the number of available nodes.
 \paragraph{} After splitting the matrix we have to send each part to the workers. Each worker will receive : 
 \begin{itemize}
 	\item offset : the chunk position in the whole matrix; 
 	\item rows : the number of rows the worker have to compute;
-	\item  matrix : the matrix part the worker should compute with the extra rows and columns needed for the computation (one after and one before). 
+	\item matrix : the matrix part the worker should compute with the extra rows and columns needed for the computation (one after and one before). 
 \end{itemize}
+
+\paragraph{} Since the original implementation allocates always a memory block of \texttt{MAX\_SIZE} $\times$ \texttt{MAX\_SIZE}, the matrix rows are not adjacent in memory. To circumvent this problem, our implementation dynamically allocates exactly the needed amount of memory, leading to a memory layout in which matrix rows are adjacent. This allows to send multiple rows at once and helps to avoid excessive amounts of \texttt{MPI\_Send()} calls.
 
 \paragraph{} The master will then do its part of the computation and wait to receive the results of the workers. 
 
@@ -42,7 +44,7 @@
 \end{itemize}
 We do not need to send the number of rows again since it is already known by the master. 
 
-\paragraph{} The work executed by each worker and the master starts by exchanging the extra rows on top and bottom. During the first turn this operation is not really necessary but it will serve for the next since it is needed for the further computations. The first pass of computation is executed respecting the turn we are in (ODD or EVEN). Now we need to check stopping condition by taking the maximum of each row and keeping only the biggest. To do so we have to synchronized this value between all the workers. Each worker is computing its own maximum value and send it to the master which will check either to stop or not and send the result back the workers. Then we can change the turn (ODD or EVEN) and go back to top of the loop until it is finished. 
+\paragraph{} The work executed by each worker and the master starts by exchanging the extra rows on top and bottom. During the first turn this operation is not really necessary but it will serve for the next since it is needed for the further computations. The first pass of computation is executed respecting the turn we are in (ODD or EVEN). The stopping condition is checked by taking the maximum of each row and keeping only the biggest sum. If this sum is converging (difference between two runs of the same type approaches $0$), the computation is stopped. To do so, each worker is computing its own maximum value and sends it to the master which will check whether to stop or not and send the result back the workers. Then the turn type is switched (ODD or EVEN) and another iteration is started.
 
 \begin{algorithm}
 	\caption{Laplace Approximation row-wise parallel implementation : global algorithm}
@@ -183,15 +185,15 @@ Figure \ref{fig:maxtrix-mult-chart} shows the runtime breakdown for the MPI vers
 		\hline
 		\textbf{Version} & \textbf{shortest runtime [s]} & \textbf{speedup} \\
 		\hline
-		Sequential single-threaded	& & \\ 
+		Sequential single-threaded	& 41.03 & 1.00 \\ 
 		\hline 
-		MPI 1 thread				& & \\ 
+		MPI 1 thread				& 41.42 & 0.99 \\ 
 		\hline 
-		MPI 2 threads				& & \\ 
+		MPI 2 threads				& 23.85 & 1.72 \\ 
 		\hline 
-		MPI 4 threads 				& & \\ 
+		MPI 4 threads 				& 16.45 & 2.49 \\ 
 		\hline 
-		MPI 8 threads				& & \\ 
+		MPI 8 threads				& 13.56 & 3.05 \\ 
 		\hline 
 	\end{tabular} 
 	\caption{Runtime comparison for LaPlace approximation}
