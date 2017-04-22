@@ -12,7 +12,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <malloc.h>
-
+#include <mpi.h>
 #define MAX_SIZE 4096
 #define EVEN_TURN 0 /* shall we calculate the 'red' or the 'black' elements */
 #define ODD_TURN  1
