@@ -13,6 +13,7 @@
 #include <math.h>
 #include <malloc.h>
 #include <mpi.h>
+
 #define MAX_SIZE 4096
 #define EVEN_TURN 0 /* shall we calculate the 'red' or the 'black' elements */
 #define ODD_TURN  1
@@ -35,8 +36,8 @@ volatile struct globmem {
 } *glob;
 
 /* forward declarations */
-int work();
-void Init_Matrix();
+int work(int rank, int nproc, int rows_node);
+int Init_Matrix(int rank, int nproc);
 void Print_Matrix();
 void Init_Default();
 int Read_Options(int, char **);
@@ -45,35 +46,35 @@ int
 main(int argc, char **argv)
 {
   int i, timestart, timeend, iter;
-  int rank,nproc,nprocT;
-  int mtype;
-  int rows_node,offset_rows;
+  int rankProc,rank,nproc,nprocT;
+  int rows_node;
   glob = (struct globmem *) malloc(sizeof(struct globmem));
 
   MPI_Init(&argc,&argv);
   MPI_Comm_size(MPI_COMM_WORLD, &nproc);
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-
+  MPI_Comm_rank(MPI_COMM_WORLD, &rankProc);
+  nprocT = nproc;
+  rank = rankProc;
   Init_Default();		/* Init default values	*/
   Read_Options(argc,argv);	/* Read arguments	*/
-  Init_Matrix();		/* Init the matrix	*/
+  rows_node = Init_Matrix(rank,nprocT);		/* Init the matrix	*/
 
   timestart= MPI_Wtime();
-  iter = work();
+  iter = work(rank,nprocT,rows_node);
 
   if (glob->PRINT == 1) Print_Matrix();
   printf("\nNumber of iterations = %d\n", iter);
 }
 
 int
-work()
+work(int rank, int nproc,int rows_node)
 {
   double prevmax_even, prevmax_odd, maxi, sum, w;
   int	m, n, N, i;
   int finished = 0;
   int turn = EVEN_TURN;
   int iteration = 0;
-  int src,dest;
+  int mtype,src,dest;
   int offset_rows;
 
   prevmax_even = 0.0;
@@ -81,15 +82,6 @@ work()
   N = glob->N;
   w = glob->w;
   offset_rows=0;
-
-  nprocT=nproc;
-  rows_node=N;
-
-  while(nprocT>1)
-  {
-    rows_node/=2;
-    nprocT/=2;
-  }
 
   while (!finished)
   {
@@ -107,9 +99,9 @@ work()
         {
           MPI_Recv(&offset_rows, 1, MPI_INT, src, mtype, MPI_COMM_WORLD, &status);
           MPI_Recv(&rows_node, 1, MPI_INT, src, mtype, MPI_COMM_WORLD, &status);
-          MPI_Recv(&a[offset_rows-1][1], rows_node*N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD);
-          MPI_Recv(&a[offset_rows][1], rows_node*N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD);
-          MPI_Recv(&a[offset_rows+1][1], rows_node*N, MPI_DOUBLE, src, mtype, MPI_COMM_WORLD);
+          MPI_Recv(&glob->A[offset_rows-1][1], rows_node*N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD, &status);
+          MPI_Recv(&glob->A[offset_rows][1], rows_node*N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD, &status);
+          MPI_Recv(&glob->A[offset_rows+1][1], rows_node*N, MPI_DOUBLE, src, mtype, MPI_COMM_WORLD, &status);
         }
       }
     }
@@ -123,9 +115,9 @@ work()
         mtype = FROM_MASTER;
         MPI_Recv(&offset_rows, 1, MPI_INT, 0, mtype, MPI_COMM_WORLD, &status);
         MPI_Recv(&rows_node, 1, MPI_INT, 0, mtype, MPI_COMM_WORLD, &status);
-        MPI_Recv(&a[offset_rows-1][1], rows_node*N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD);
-        MPI_Recv(&a[offset_rows][0], rows_node*N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD);
-        MPI_Recv(&a[offset_rows+1][1], rows_node*N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD);
+        MPI_Recv(&glob->A[offset_rows-1][1], rows_node*N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD, &status);
+        MPI_Recv(&glob->A[offset_rows][0], rows_node*N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD, &status);
+        MPI_Recv(&glob->A[offset_rows+1][1], rows_node*N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD, &status);
       }
     }
 
@@ -220,16 +212,16 @@ work()
 
           //MASTER SENDING TO WORKERS
 
-          for (dest = 1; dest < nprocT; dest++) {
+          for (dest = 1; dest < nproc; dest++) {
             /* code */
            if (offset_rows<N-offset_rows)  offset_rows+=rows_node;
            else offset_rows=1;
 
             MPI_Send(&offset_rows, 1, MPI_INT, dest, mtype, MPI_COMM_WORLD);
             MPI_Send(&rows_node,1,MPI_INT,dest,mtype, MPI_COMM_WORLD);
-            MPI_Send(&a[offset_rows-1][1], N, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
-            MPI_Send(&a[offset_rows][0], N+2, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
-            MPI_Send(&a[offset_rows+1][1], N, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
+            MPI_Send(&glob->A[offset_rows-1][1], N, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
+            MPI_Send(&glob->A[offset_rows][0], N+2, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
+            MPI_Send(&glob->A[offset_rows+1][1], N, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
           }
         }
 
@@ -240,9 +232,9 @@ work()
           mtype = FROM_WORKER;
           MPI_Send(&offset_rows, 1, MPI_INT, 0, mtype, MPI_COMM_WORLD);
           MPI_Send(&rows_node,1,MPI_INT,0,mtype, MPI_COMM_WORLD);
-          MPI_Send(&a[offset_rows-1][1], N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD);
-          MPI_Send(&a[offset_rows][0], rows_node*(N+2), MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD);
-          MPI_Send(&a[offset_rows+1][1], N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD);
+          MPI_Send(&glob->A[offset_rows-1][1], N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD);
+          MPI_Send(&glob->A[offset_rows][0], rows_node*(N+2), MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD);
+          MPI_Send(&glob->A[offset_rows+1][1], N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD);
         }
 
       } //end while
@@ -251,10 +243,11 @@ work()
 
     /*--------------------------------------------------------------*/
 
-    void
-    Init_Matrix()
+    int
+    Init_Matrix(int rank, int nproc)
     {
-      int i, j, N, dmmy,dest,src;
+      int i, j, N, dmmy;
+      int mtype,dest,src;
       int offset_rows, nprocT, rows_node;
       N = glob->N;
       printf("\nsize      = %dx%d ",N,N);
@@ -320,8 +313,6 @@ work()
 
       if(rank==0)
       {
-        mtype = FROM_MASTER;
-
         nprocT=nproc;
         rows_node=N;
 
@@ -331,6 +322,7 @@ work()
           nprocT/=2;
         }
 
+        mtype = FROM_MASTER;
         offset_rows=1;
 
         for(dest=1;dest<nproc;dest++)
@@ -340,9 +332,9 @@ work()
 
           MPI_Send(&rows_node,1,MPI_INT,dest,mtype, MPI_COMM_WORLD);
           MPI_Send(&offset_rows, 1, MPI_INT, dest, mtype, MPI_COMM_WORLD);
-          MPI_Send(&a[offset_rows-1][1], N, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
-          MPI_Send(&a[offset_rows][0], N+2, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
-          MPI_Send(&a[offset_rows+1][1], N, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
+          MPI_Send(&glob->A[offset_rows-1][1], N, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
+          MPI_Send(&glob->A[offset_rows][0], N+2, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
+          MPI_Send(&glob->A[offset_rows+1][1], N, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
         }
       }
       else
@@ -350,10 +342,12 @@ work()
         mtype = FROM_MASTER;
         MPI_Recv(&rows_node, 1, MPI_INT, 0, mtype, MPI_COMM_WORLD, &status);
         MPI_Recv(&offset_rows, 1, MPI_INT, 0, mtype, MPI_COMM_WORLD, &status);
-        MPI_Recv(&a[offset_rows-1][1], N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD, &status);
-        MPI_Recv(&a[offset_rows][0], N+2, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD, &status);
-        MPI_Recv(&a[offset_rows+1][1], N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD, &status);
+        MPI_Recv(&glob->A[offset_rows-1][1], N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD, &status);
+        MPI_Recv(&glob->A[offset_rows][0], N+2, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD, &status);
+        MPI_Recv(&glob->A[offset_rows+1][1], N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD, &status);
       }
+
+      return rows_node;
 
     }
 
