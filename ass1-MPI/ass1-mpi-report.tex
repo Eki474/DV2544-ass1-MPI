@@ -27,18 +27,35 @@
 \subsection{MPI-based Blocked Matrix-Matrix Multiplication}
 
 \paragraph{} Based on the provided one-dimensional row-based implementation, we created an implementation using a two-dimensional block-wise checkerboard data distribution. This means that for two given matrices $A,B$ with $N \times N$ elements each, every worker will compute $m \times n$ values of the result matrix $C$ with $m,n \leq N$.
-To compute the result value $C_{m,n}$, the $n$th row of matrix $A$ and the $m$th column of matrix $B$ are needed.
+
+\paragraph{} The work patch size is determined by starting with the size $N \times N$ of the whole matrix and the number of available worker nodes $n_w$. While $n_w \geq 2$, the work patch size is split in half, using alternating split dimensions, and $n_w$ is divided by two. This assumes that $N$ is a multiple of $n_w$.
+
+\paragraph{}
+To compute the result value $C_{x,y}$, the $x$th row of matrix $A$ and the $y$th column of matrix $B$ are needed.
 In order to simplify the transfer of the columns of matrix $B$ to the worker nodes, matrix $B$ is transposed in the beginning so it is in column-major order in memory.
+The master node then proceeds to send the required information to the workers. Each worker will receive:
+\begin{description}
+	\item[offset\_row]: The row index to start from
+	\item[offset\_col]: The column index to start from
+	\item[num\_rows]: The number of rows in the work patch
+	\item[num\_cols]: The number of columns in the work patch
+	\item[A]: $num\_rows$ elements of the $A$ matrix, starting from $offset\_row$. Since this matrix is in row-major order, consecutive rows are adjacent in the memory and can be copied / sent as one block.
+	\item[B]: $num\_cols$ elements of the $B$ matrix, starting from $offset\_cols$. Since this matrix is transposed and now in column-major order, consecutive columns are adjacent in memory and can be copied / sent as one block.
+\end{description}
+
+\paragraph{} The master will have the patch with offset $(0, 0)$. Both the master and the workers then do the actual calculation for their assigned part of the result matrix. Since the $B$ matrix was transposed, the matrix multiplication routine had to be changed slightly.
+
+\paragraph{} Once they are finished, they send back the data to the master. Since every worker has a 2D patch of the whole $C$ matrix which cannot be sent as a single block (since the rows not adjacent in memory in most cases), every worker sends back the entire $C$ matrix. The master receives this data into an additional buffer matrix $D$ and copies over the relevant parts of the result into its own $C$ matrix.
 
 \subsection{MPI-based Laplace Approximation}
 
 \paragraph{} First we chose to write the row-wise MPI-implementation of the Laplace Approximation. So we split the matrix on row dimension only given the number of available nodes.
 \paragraph{} After splitting the matrix we have to send each part to the workers. Each worker will receive : 
-\begin{itemize}
-	\item offset : the chunk position in the whole matrix; 
-	\item rows : the number of rows the worker have to compute;
-	\item matrix : the matrix part the worker should compute with the extra rows and columns needed for the computation (one after and one before). 
-\end{itemize}
+\begin{description}
+	\item[offset]: the chunk position in the whole matrix; 
+	\item[rows]: the number of rows the worker have to compute;
+	\item[matrix]: the matrix part the worker should compute with the extra rows and columns needed for the computation (one after and one before). 
+\end{description}
 
 \paragraph{} Since the original implementation allocates always a memory block of \texttt{MAX\_SIZE} $\times$ \texttt{MAX\_SIZE}, the matrix rows are not adjacent in memory. To circumvent this problem, our implementation dynamically allocates exactly the needed amount of memory, leading to a memory layout in which matrix rows are adjacent. This allows to send multiple rows at once and helps to avoid excessive amounts of \texttt{MPI\_Send()} calls.
 
