@@ -13,7 +13,6 @@
 #include <math.h>
 #include <malloc.h>
 #include <mpi.h>
-#include <string.h>
 
 #define MAX_SIZE 4096
 #define EVEN_TURN 0 /* shall we calculate the 'red' or the 'black' elements */
@@ -62,10 +61,10 @@ main(int argc, char **argv)
 
   timestart= MPI_Wtime();
   iter = work(rank,nprocT,rows_node);
-
+  timeend = MPI_Wtime;
   if (glob->PRINT == 1) Print_Matrix();
   printf("\nNumber of iterations = %d\n", iter);
-
+  printf("\nCores: %d \nTime : %.4f\n", nprocT, end_time-start_time);
   MPI_Finalize();
   return 0;
 }
@@ -103,28 +102,25 @@ work(int rank, int nproc,int rows_node)
         {
           MPI_Recv(&offset_rows, 1, MPI_INT, src, mtype, MPI_COMM_WORLD, &status);
           MPI_Recv(&rows_node, 1, MPI_INT, src, mtype, MPI_COMM_WORLD, &status);
-          MPI_Recv(&glob->A[offset_rows-1][1], rows_node*N, MPI_DOUBLE, src, mtype, MPI_COMM_WORLD, &status);
-          MPI_Recv(&glob->A[offset_rows][1], rows_node*N, MPI_DOUBLE, src, mtype, MPI_COMM_WORLD, &status);
-          MPI_Recv(&glob->A[offset_rows+1][1], rows_node*N, MPI_DOUBLE, src, mtype, MPI_COMM_WORLD, &status);
+          MPI_Recv(&glob->A[offset_rows-1][1], N, MPI_DOUBLE, src, mtype, MPI_COMM_WORLD, &status);
+          MPI_Recv(&glob->A[offset_rows][1], rows_node*(N+2), MPI_DOUBLE, src, mtype, MPI_COMM_WORLD, &status);
+          MPI_Recv(&glob->A[offset_rows+1][1], N, MPI_DOUBLE, src, mtype, MPI_COMM_WORLD, &status);
         }
       }
     }
     //WORKER TASK
     else
     {
-      if(offset_rows< N-offset_rows)
-        offset_rows+=rows_node;
-      else
-        offset_rows=1;
+      if(offset_rows< N-offset_rows) offset_rows+=rows_node : offset_rows=1;
       if(iteration>1)
       {
         //WORKERS RECEIVING DATA FROM MASTER FOR THEIR WORK
         mtype = FROM_MASTER;
         MPI_Recv(&offset_rows, 1, MPI_INT, 0, mtype, MPI_COMM_WORLD, &status);
         MPI_Recv(&rows_node, 1, MPI_INT, 0, mtype, MPI_COMM_WORLD, &status);
-        MPI_Recv(&glob->A[offset_rows-1][1], rows_node*N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD, &status);
-        MPI_Recv(&glob->A[offset_rows][0], rows_node*N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD, &status);
-        MPI_Recv(&glob->A[offset_rows+1][1], rows_node*N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD, &status);
+        MPI_Recv(&glob->A[offset_rows-1][1], N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD, &status);
+        MPI_Recv(&glob->A[offset_rows][0], rows_node*(N+2), MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD, &status);
+        MPI_Recv(&glob->A[offset_rows+1][1], N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD, &status);
       }
     }
 
@@ -226,7 +222,7 @@ work(int rank, int nproc,int rows_node)
             MPI_Send(&offset_rows, 1, MPI_INT, dest, mtype, MPI_COMM_WORLD);
             MPI_Send(&rows_node,1,MPI_INT,dest,mtype, MPI_COMM_WORLD);
             MPI_Send(&glob->A[offset_rows-1][1], N, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
-            MPI_Send(&glob->A[offset_rows][0], N+2, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
+            MPI_Send(&glob->A[offset_rows][0], rows_node*(N+2), MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
             MPI_Send(&glob->A[offset_rows+1][1], N, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
           }
         }
@@ -339,7 +335,7 @@ work(int rank, int nproc,int rows_node)
           MPI_Send(&rows_node,1,MPI_INT,dest,mtype, MPI_COMM_WORLD);
           MPI_Send(&offset_rows, 1, MPI_INT, dest, mtype, MPI_COMM_WORLD);
           MPI_Send(&glob->A[offset_rows-1][1], N, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
-          MPI_Send(&glob->A[offset_rows][0], N+2, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
+          MPI_Send(&glob->A[offset_rows][0], rows_node*(N+2), MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
           MPI_Send(&glob->A[offset_rows+1][1], N, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
         }
       }
@@ -349,7 +345,7 @@ work(int rank, int nproc,int rows_node)
         MPI_Recv(&rows_node, 1, MPI_INT, 0, mtype, MPI_COMM_WORLD, &status);
         MPI_Recv(&offset_rows, 1, MPI_INT, 0, mtype, MPI_COMM_WORLD, &status);
         MPI_Recv(&glob->A[offset_rows-1][1], N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD, &status);
-        MPI_Recv(&glob->A[offset_rows][0], N+2, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD, &status);
+        MPI_Recv(&glob->A[offset_rows][0], rows_node*(N+2), MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD, &status);
         MPI_Recv(&glob->A[offset_rows+1][1], N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD, &status);
       }
 
