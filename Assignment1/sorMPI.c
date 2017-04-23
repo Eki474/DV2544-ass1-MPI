@@ -13,6 +13,7 @@
 #include <math.h>
 #include <malloc.h>
 #include <mpi.h>
+#include <string.h>
 
 #define MAX_SIZE 4096
 #define EVEN_TURN 0 /* shall we calculate the 'red' or the 'black' elements */
@@ -62,7 +63,7 @@ main(int argc, char **argv)
 
   timestart= MPI_Wtime();
   iter = work(rank,nprocT,rows_node);
-  timeend = MPI_Wtime;
+  timeend = MPI_Wtime();
   if (glob->PRINT == 1) Print_Matrix();
   printf("\nNumber of iterations = %d\n", iter);
   printf("\nCores: %d \nTime : %.4f\n", nprocT, timeend-timestart);
