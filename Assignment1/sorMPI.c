@@ -45,9 +45,10 @@ int Read_Options(int, char **);
 int
 main(int argc, char **argv)
 {
-  int i, timestart, timeend, iter;
+  int i, iter;
   int rankProc,rank,nproc,nprocT;
   int rows_node;
+  double  timestart, timeend;
   glob = (struct globmem *) malloc(sizeof(struct globmem));
 
   MPI_Init(&argc,&argv);
