@@ -64,6 +64,9 @@ main(int argc, char **argv)
 
   if (glob->PRINT == 1) Print_Matrix();
   printf("\nNumber of iterations = %d\n", iter);
+
+  MPI_Finalize();
+  return 0;
 }
 
 int
@@ -99,8 +102,8 @@ work(int rank, int nproc,int rows_node)
         {
           MPI_Recv(&offset_rows, 1, MPI_INT, src, mtype, MPI_COMM_WORLD, &status);
           MPI_Recv(&rows_node, 1, MPI_INT, src, mtype, MPI_COMM_WORLD, &status);
-          MPI_Recv(&glob->A[offset_rows-1][1], rows_node*N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD, &status);
-          MPI_Recv(&glob->A[offset_rows][1], rows_node*N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD, &status);
+          MPI_Recv(&glob->A[offset_rows-1][1], rows_node*N, MPI_DOUBLE, src, mtype, MPI_COMM_WORLD, &status);
+          MPI_Recv(&glob->A[offset_rows][1], rows_node*N, MPI_DOUBLE, src, mtype, MPI_COMM_WORLD, &status);
           MPI_Recv(&glob->A[offset_rows+1][1], rows_node*N, MPI_DOUBLE, src, mtype, MPI_COMM_WORLD, &status);
         }
       }
@@ -204,9 +207,8 @@ work(int rank, int nproc,int rows_node)
           printf("Max number of iterations reached! Exit!\n");
           finished = 1;
         }
-
         // MASTER TASK
-        if(rank==0)
+        if(rank==0 && !finished)
         {
           mtype = FROM_MASTER;
 
