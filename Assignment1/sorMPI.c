@@ -112,7 +112,8 @@ work(int rank, int nproc,int rows_node)
     //WORKER TASK
     else
     {
-      if(offset_rows< N-offset_rows) offset_rows+=rows_node : offset_rows=1;
+      if(offset_rows< N-offset_rows) offset_rows+=rows_node;
+      else offset_rows=1;
       if(iteration>1)
       {
         //WORKERS RECEIVING DATA FROM MASTER FOR THEIR WORK
