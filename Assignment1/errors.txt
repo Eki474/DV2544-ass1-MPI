@@ -1,80 +1,130 @@
-move15@kraken:~/a1/task2$ mpicc sorMPI.c -o sorMPI
 sorMPI.c: In function ‘work’:
-sorMPI.c:85:3: error: ‘nprocT’ undeclared (first use in this function)
-   nprocT=nproc;
-   ^
-sorMPI.c:85:3: note: each undeclared identifier is reported only once for each function it appears in
-sorMPI.c:85:10: error: ‘nproc’ undeclared (first use in this function)
-   nprocT=nproc;
-          ^
-sorMPI.c:86:3: error: ‘rows_node’ undeclared (first use in this function)
-   rows_node=N;
-   ^
-sorMPI.c:99:8: error: ‘rank’ undeclared (first use in this function)
-     if(rank==0)
-        ^
-sorMPI.c:105:9: error: ‘mtype’ undeclared (first use in this function)
-         mtype = FROM_WORKER;
-         ^
-sorMPI.c:110:21: error: ‘a’ undeclared (first use in this function)
-           MPI_Recv(&a[offset_rows-1][1], rows_node*N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD);
-                     ^
-sorMPI.c:110:11: error: too few arguments to function ‘MPI_Recv’
-           MPI_Recv(&a[offset_rows-1][1], rows_node*N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD);
+sorMPI.c:102:11: warning: passing argument 1 of ‘MPI_Recv’ discards ‘volatile’ qualifier from pointer target type [enabled by default]
+           MPI_Recv(&glob->A[offset_rows-1][1], rows_node*N, MPI_DOUBLE, src, mtype, MPI_COMM_WORLD, &status);
            ^
 In file included from sorMPI.c:15:0:
-/usr/local/include/mpi.h:529:5: note: declared here
+/usr/local/include/mpi.h:529:5: note: expected ‘void *’ but argument is of type ‘volatile double *’
  int MPI_Recv(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Status *);
      ^
-sorMPI.c:111:11: error: too few arguments to function ‘MPI_Recv’
-           MPI_Recv(&a[offset_rows][1], rows_node*N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD);
+sorMPI.c:103:11: warning: passing argument 1 of ‘MPI_Recv’ discards ‘volatile’ qualifier from pointer target type [enabled by default]
+           MPI_Recv(&glob->A[offset_rows][1], rows_node*N, MPI_DOUBLE, src, mtype, MPI_COMM_WORLD, &status);
            ^
 In file included from sorMPI.c:15:0:
-/usr/local/include/mpi.h:529:5: note: declared here
+/usr/local/include/mpi.h:529:5: note: expected ‘void *’ but argument is of type ‘volatile double *’
  int MPI_Recv(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Status *);
      ^
-sorMPI.c:112:11: error: too few arguments to function ‘MPI_Recv’
-           MPI_Recv(&a[offset_rows+1][1], rows_node*N, MPI_DOUBLE, src, mtype, MPI_COMM_WORLD);
+sorMPI.c:104:11: warning: passing argument 1 of ‘MPI_Recv’ discards ‘volatile’ qualifier from pointer target type [enabled by default]
+           MPI_Recv(&glob->A[offset_rows+1][1], rows_node*N, MPI_DOUBLE, src, mtype, MPI_COMM_WORLD, &status);
            ^
 In file included from sorMPI.c:15:0:
-/usr/local/include/mpi.h:529:5: note: declared here
+/usr/local/include/mpi.h:529:5: note: expected ‘void *’ but argument is of type ‘volatile double *’
  int MPI_Recv(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Status *);
      ^
-sorMPI.c:119:38: error: expected expression before ‘?’ token
+sorMPI.c:111:38: error: expected expression before ‘?’ token
        if(offset_rows< N-offset_rows) ? offset_rows+=rows_node : offset_rows=1;
                                       ^
-sorMPI.c:126:9: error: too few arguments to function ‘MPI_Recv’
-         MPI_Recv(&a[offset_rows-1][1], rows_node*N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD);
+sorMPI.c:118:9: error: incompatible type for argument 1 of ‘MPI_Recv’
+         MPI_Recv(glob->A[offset_rows-1][1], rows_node*N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD, &status);
          ^
 In file included from sorMPI.c:15:0:
-/usr/local/include/mpi.h:529:5: note: declared here
+/usr/local/include/mpi.h:529:5: note: expected ‘void *’ but argument is of type ‘double’
  int MPI_Recv(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Status *);
      ^
-sorMPI.c:127:9: error: too few arguments to function ‘MPI_Recv’
-         MPI_Recv(&a[offset_rows][0], rows_node*N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD);
+sorMPI.c:119:9: error: incompatible type for argument 1 of ‘MPI_Recv’
+         MPI_Recv(glob->A[offset_rows][0], rows_node*N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD, &status);
          ^
 In file included from sorMPI.c:15:0:
-/usr/local/include/mpi.h:529:5: note: declared here
+/usr/local/include/mpi.h:529:5: note: expected ‘void *’ but argument is of type ‘double’
  int MPI_Recv(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Status *);
      ^
-sorMPI.c:128:9: error: too few arguments to function ‘MPI_Recv’
-         MPI_Recv(&a[offset_rows+1][1], rows_node*N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD);
+sorMPI.c:120:9: error: incompatible type for argument 1 of ‘MPI_Recv’
+         MPI_Recv(glob->A[offset_rows+1][1], rows_node*N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD, &status);
          ^
 In file included from sorMPI.c:15:0:
-/usr/local/include/mpi.h:529:5: note: declared here
+/usr/local/include/mpi.h:529:5: note: expected ‘void *’ but argument is of type ‘double’
  int MPI_Recv(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Status *);
+     ^
+sorMPI.c:222:13: error: incompatible type for argument 1 of ‘MPI_Send’
+             MPI_Send(glob->A[offset_rows-1][1], N, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
+             ^
+In file included from sorMPI.c:15:0:
+/usr/local/include/mpi.h:528:5: note: expected ‘void *’ but argument is of type ‘double’
+ int MPI_Send(void*, int, MPI_Datatype, int, int, MPI_Comm);
+     ^
+sorMPI.c:223:13: error: incompatible type for argument 1 of ‘MPI_Send’
+             MPI_Send(glob->A[offset_rows][0], N+2, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
+             ^
+In file included from sorMPI.c:15:0:
+/usr/local/include/mpi.h:528:5: note: expected ‘void *’ but argument is of type ‘double’
+ int MPI_Send(void*, int, MPI_Datatype, int, int, MPI_Comm);
+     ^
+sorMPI.c:224:13: error: incompatible type for argument 1 of ‘MPI_Send’
+             MPI_Send(glob->A[offset_rows+1][1], N, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
+             ^
+In file included from sorMPI.c:15:0:
+/usr/local/include/mpi.h:528:5: note: expected ‘void *’ but argument is of type ‘double’
+ int MPI_Send(void*, int, MPI_Datatype, int, int, MPI_Comm);
+     ^
+sorMPI.c:235:11: error: incompatible type for argument 1 of ‘MPI_Send’
+           MPI_Send(glob->A[offset_rows-1][1], N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD);
+           ^
+In file included from sorMPI.c:15:0:
+/usr/local/include/mpi.h:528:5: note: expected ‘void *’ but argument is of type ‘double’
+ int MPI_Send(void*, int, MPI_Datatype, int, int, MPI_Comm);
+     ^
+sorMPI.c:236:11: error: incompatible type for argument 1 of ‘MPI_Send’
+           MPI_Send(glob->A[offset_rows][0], rows_node*(N+2), MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD);
+           ^
+In file included from sorMPI.c:15:0:
+/usr/local/include/mpi.h:528:5: note: expected ‘void *’ but argument is of type ‘double’
+ int MPI_Send(void*, int, MPI_Datatype, int, int, MPI_Comm);
+     ^
+sorMPI.c:237:11: error: incompatible type for argument 1 of ‘MPI_Send’
+           MPI_Send(glob->A[offset_rows+1][1], N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD);
+           ^
+In file included from sorMPI.c:15:0:
+/usr/local/include/mpi.h:528:5: note: expected ‘void *’ but argument is of type ‘double’
+ int MPI_Send(void*, int, MPI_Datatype, int, int, MPI_Comm);
      ^
 sorMPI.c: In function ‘Init_Matrix’:
-sorMPI.c:321:10: error: ‘rank’ undeclared (first use in this function)
-       if(rank==0)
-          ^
-sorMPI.c:323:9: error: ‘mtype’ undeclared (first use in this function)
-         mtype = FROM_MASTER;
+sorMPI.c:336:11: error: incompatible type for argument 1 of ‘MPI_Send’
+           MPI_Send(glob->A[offset_rows-1][1], N, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
+           ^
+In file included from sorMPI.c:15:0:
+/usr/local/include/mpi.h:528:5: note: expected ‘void *’ but argument is of type ‘double’
+ int MPI_Send(void*, int, MPI_Datatype, int, int, MPI_Comm);
+     ^
+sorMPI.c:337:11: error: incompatible type for argument 1 of ‘MPI_Send’
+           MPI_Send(glob->A[offset_rows][0], N+2, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
+           ^
+In file included from sorMPI.c:15:0:
+/usr/local/include/mpi.h:528:5: note: expected ‘void *’ but argument is of type ‘double’
+ int MPI_Send(void*, int, MPI_Datatype, int, int, MPI_Comm);
+     ^
+sorMPI.c:338:11: error: incompatible type for argument 1 of ‘MPI_Send’
+           MPI_Send(glob->A[offset_rows+1][1], N, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
+           ^
+In file included from sorMPI.c:15:0:
+/usr/local/include/mpi.h:528:5: note: expected ‘void *’ but argument is of type ‘double’
+ int MPI_Send(void*, int, MPI_Datatype, int, int, MPI_Comm);
+     ^
+sorMPI.c:346:9: error: incompatible type for argument 1 of ‘MPI_Recv’
+         MPI_Recv(glob->A[offset_rows-1][1], N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD, &status);
          ^
-sorMPI.c:325:16: error: ‘nproc’ undeclared (first use in this function)
-         nprocT=nproc;
-                ^
-sorMPI.c:343:21: error: ‘a’ undeclared (first use in this function)
-           MPI_Send(&a[offset_rows-1][1], N, MPI_DOUBLE, dest, mtype, MPI_COMM_WORLD);
-                     ^
-move15@kraken:~/a1/task2$
+In file included from sorMPI.c:15:0:
+/usr/local/include/mpi.h:529:5: note: expected ‘void *’ but argument is of type ‘double’
+ int MPI_Recv(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Status *);
+     ^
+sorMPI.c:347:9: error: incompatible type for argument 1 of ‘MPI_Recv’
+         MPI_Recv(glob->A[offset_rows][0], N+2, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD, &status);
+         ^
+In file included from sorMPI.c:15:0:
+/usr/local/include/mpi.h:529:5: note: expected ‘void *’ but argument is of type ‘double’
+ int MPI_Recv(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Status *);
+     ^
+sorMPI.c:348:9: error: incompatible type for argument 1 of ‘MPI_Recv’
+         MPI_Recv(glob->A[offset_rows+1][1], N, MPI_DOUBLE, 0, mtype, MPI_COMM_WORLD, &status);
+         ^
+In file included from sorMPI.c:15:0:
+/usr/local/include/mpi.h:529:5: note: expected ‘void *’ but argument is of type ‘double’
+ int MPI_Recv(void*, int, MPI_Datatype, int, int, MPI_Comm, MPI_Status *);
