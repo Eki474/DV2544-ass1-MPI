@@ -31,7 +31,7 @@
 \paragraph{} The work patch size is determined by starting with the size $N \times N$ of the whole matrix and the number of available worker nodes $n_w$. While $n_w \geq 2$, the work patch size is split in half, using alternating split dimensions, and $n_w$ is divided by two. This assumes that $N$ is a multiple of $n_w$.
 
 \paragraph{}
-To compute the result value $C_{x,y}$, the $x$th row of matrix $A$ and the $y$th column of matrix $B$ are needed.
+To compute the result value $C_{x,y}$, the $x^{th}$ row of matrix $A$ and the $y^{th}$ column of matrix $B$ are needed.
 In order to simplify the transfer of the columns of matrix $B$ to the worker nodes, matrix $B$ is transposed in the beginning so it is in column-major order in memory.
 The master node then proceeds to send the required information to the workers. Each worker will receive:
 \begin{description}
@@ -47,6 +47,8 @@ The master node then proceeds to send the required information to the workers. E
 
 \paragraph{} Once they are finished, they send back the data to the master. Since every worker has a 2D patch of the whole $C$ matrix which cannot be sent as a single block (since the rows not adjacent in memory in most cases), every worker sends back the entire $C$ matrix. The master receives this data into an additional buffer matrix $D$ and copies over the relevant parts of the result into its own $C$ matrix.
 
+\paragraph{} For more details on the algorithm, see Algorithm \ref{matmul} in Appendix A.
+
 \subsection{MPI-based Laplace Approximation}
 
 \paragraph{} First we chose to write the row-wise MPI-implementation of the Laplace Approximation. So we split the matrix on row dimension only given the number of available nodes.
@@ -61,14 +63,11 @@ The master node then proceeds to send the required information to the workers. E
 
 \paragraph{} The master will then do its part of the computation and wait to receive the results of the workers. 
 
-\paragraph{} The workers will receive their data and start the computation, after computation they will send back the results to the master : 
-\begin{itemize}
-	\item offset;
-	\item result matrix.
-\end{itemize}
-We do not need to send the number of rows again since it is already known by the master. 
+\paragraph{} The workers will receive their data and start the computation, after computation they will send back the results to the master : offset and result matrix. We do not need to send the number of rows again since it is already known by the master. 
 
-\paragraph{} The work executed by each worker and the master starts by exchanging the extra rows on top and bottom. During the first turn this operation is not really necessary but it will serve for the next since it is needed for the further computations. The first pass of computation is executed respecting the turn we are in (ODD or EVEN). The stopping condition is checked by taking the maximum of each row and keeping only the biggest sum. If this sum is converging (difference between two runs of the same type approaches $0$), the computation is stopped. To do so, each worker is computing its own maximum value and sends it to the master which will check whether to stop or not and send the result back the workers. Then the turn type is switched (ODD or EVEN) and another iteration is started.
+\paragraph{} The work executed by each worker and the master starts by exchanging the extra rows on top and bottom. During the first turn this operation is not really necessary but it will serve for the next since it is needed for the further computations. The first pass of computation is executed respecting the turn we are in (ODD or EVEN). The stopping condition is checked by taking the maximum of each row and keeping only the biggest sum. If this sum is converging (difference between two runs of the same type approaches $0$), the computation is stopped. To do so, each worker is computing its own maximum value and sends it to the master which will check whether to stop or not and send the result back to the workers. Then the turn type is switched (ODD or EVEN) and another iteration is started.
+
+\paragraph{} For more details on the algorithm, see Algorithm \ref{laplace} and \ref{laplace_work} in Appendix B and C.
 
 \section{Measurements}
 
@@ -205,11 +204,60 @@ Figure \ref{fig:maxtrix-mult-chart} shows the runtime breakdown for the MPI vers
 
 \FloatBarrier
 \clearpage
+\newpage
 
-\begin{appendix}
+\begin{appendices}
 	\section*{Appendix A: Matrix multiplication algorithm}
-	something
+	
+	\begin{algorithm}
+		\caption{Matrix multiplication block-wise parallel implementation algorithm}
+		\label{matmul}
+		\begin{algorithmic}
+			\STATE MPI initialize
+			\IF{master}
+				\STATE matrix initialize
+				\STATE transpose matrix B
+				\STATE split the matrix 
+			\FOR{p from 1 to number of cores}
+				\STATE MPI Send(offset row to worker p)
+				\STATE MPI Send(offset column to worker p)
+				\STATE MPI Send(number of rows to worker p)
+				\STATE MPI Send(number of columns to worker p)
+				\STATE MPI Send(matrix A rows to worker p)
+				\STATE MPI Send(matrix B columns to worker p)
+			\ENDFOR
+			\STATE Matrix multiplication computation on the block
+			\FOR{p from 1 to number of cores}
+				\STATE MPI Recv(offset row from worker p)
+				\STATE MPI Recv(offset column from worker p)
+				\STATE MPI Recv(number of rows from worker p)
+				\STATE MPI Recv(number of columns from worker p)
+				\STATE MPI Recv(matrix C from worker p)
+			\ENDFOR
+			\ELSE 
+				\STATE MPI Recv(offset row from master)
+				\STATE MPI Recv(offset column from master)
+				\STATE MPI Recv(number of rows from master)
+				\STATE MPI Recv(number of columns from master)
+				\STATE MPI Recv(matrix A rows from master)
+				\STATE MPI Recv(matrix B columns from master)
+				\STATE
+				\STATE Matrix multiplication computation on the block
+				\STATE
+				\STATE MPI Send(offset row to master)
+				\STATE MPI Send(offset column to master)
+				\STATE MPI Send(number of rows to master)
+				\STATE MPI Send(number of columns to master)
+				\STATE MPI Send(matrix C to master)
+			\ENDIF
+			\STATE MPI finilize
+		\end{algorithmic}
+	\end{algorithm}
+	
+	\newpage
+	
 	\section*{Appendix B: Laplace Approximation global algorithm}
+	
 	\begin{algorithm}
 		\caption{Laplace Approximation row-wise parallel implementation : global algorithm}
 		\label{laplace}
@@ -218,56 +266,62 @@ Figure \ref{fig:maxtrix-mult-chart} shows the runtime breakdown for the MPI vers
 			\STATE matrix initialize
 			\STATE split the matrix
 			\IF{master} 
-			\FOR{p from 1 to number of cores}
-			\STATE MPI Send(offset to worker p)
-			\STATE MPI Send(number of rows to worker p)
-			\STATE MPI Send(matrix to worker p)
-			\ENDFOR
-			\STATE Call work(number of rows, offset)
-			\FOR{p from 1 to number of cores}
-			\STATE MPI Recv(offset from worker p)
-			\STATE MPI Recv(matrix from worker p)
-			\ENDFOR
+				\FOR{p from 1 to number of cores}
+					\STATE MPI Send(offset to worker p)
+					\STATE MPI Send(number of rows to worker p)
+					\STATE MPI Send(matrix to worker p)
+				\ENDFOR
+				\STATE Call work(number of rows, offset)
+				\FOR{p from 1 to number of cores}
+					\STATE MPI Recv(offset from worker p)
+					\STATE MPI Recv(matrix from worker p)
+				\ENDFOR
 			\ELSE 
-			\STATE MPI Recv(offset from master)
-			\STATE MPI Recv(number of rows from master)
-			\STATE MPI Recv(matrix from master)
-			\STATE Call work(number of rows, offset)
-			\STATE MPI Send(offset to master)
-			\STATE MPI Send(matrix to master)
+				\STATE MPI Recv(offset from master)
+				\STATE MPI Recv(number of rows from master)
+				\STATE MPI Recv(matrix from master)
+				\STATE
+				\STATE Call work(number of rows, offset)
+				\STATE
+				\STATE MPI Send(offset to master)
+				\STATE MPI Send(matrix to master)
 			\ENDIF
 			\STATE MPI finilize
 		\end{algorithmic}
 	\end{algorithm}
+
+	\newpage
+
 	\section*{Appendix C: Laplace Approximation work algorithm}
+	
 	\begin{algorithm}
 		\caption{Laplace Approximation row-wise parallel implementation : work function}
 		\label{laplace_work}
 		\begin{algorithmic}
 			\STATE turn = EVEN
 			\WHILE {not finished}
-			\STATE iteration++
-			\IF{not the first row}
-			\STATE MPI Recv(top row from above worker)
-			\STATE MPI Send(top row to above worker)
-			\ENDIF
-			\IF{not the last row}
-			\STATE MPI Send(bottom row to below worker)
-			\STATE MPI Recv(bottom row from below worker)
-			\ENDIF
-			\STATE Computations Laplace Approximation
-			\STATE Max row sum calculation
-			\IF{not the master}
-			\STATE MPI Send(max row sum to master)
-			\ELSE 
-			\STATE Check stopping conditions
-			\ENDIF
-			\STATE MPI Broadcast(finished status to every worker)
-			\STATE turn changing 
+				\STATE iteration++
+				\IF{not the first row}
+					\STATE MPI Recv(top row from above worker)
+					\STATE MPI Send(top row to above worker)
+				\ENDIF
+				\IF{not the last row}
+					\STATE MPI Send(bottom row to below worker)
+					\STATE MPI Recv(bottom row from below worker)
+				\ENDIF
+				\STATE Computations Laplace Approximation
+				\STATE Max row sum calculation
+				\IF{not the master}
+					\STATE MPI Send(max row sum to master)
+				\ELSE 
+					\STATE Check stopping conditions
+				\ENDIF
+				\STATE MPI Broadcast(finished status to every worker)
+				\STATE turn changing 
 			\ENDWHILE
 			\RETURN iteration
 		\end{algorithmic}
 	\end{algorithm}
-\end{appendix}
+\end{appendices}
 
 \end{document}
