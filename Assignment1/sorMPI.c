@@ -211,7 +211,7 @@ work(int rank, int nproc,int rows_node)
           finished = 1;
         }
         // MASTER TASK
-        if(rank==0)
+        if(rank==0 && !finished)
         {
           mtype = FROM_MASTER;
 
