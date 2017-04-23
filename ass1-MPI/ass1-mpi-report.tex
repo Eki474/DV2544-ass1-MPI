@@ -22,13 +22,16 @@
 
 \maketitle
 
+\section{How to run}
+
+\paragraph{} The archive contains a \emph{Makefile}. Running \texttt{make} in the directory will create two binaries, \texttt{matrix\_mult\_mpi2} and \texttt{laplace\_sor\_mpi}.
+
 \section{Implementation}
 
 \subsection{MPI-based Blocked Matrix-Matrix Multiplication}
 
 \paragraph{} Based on the provided one-dimensional row-based implementation, we created an implementation using a two-dimensional block-wise checkerboard data distribution. This means that for two given matrices $A,B$ with $N \times N$ elements each, every worker will compute $m \times n$ values of the result matrix $C$ with $m,n \leq N$.
-
-\paragraph{} The work patch size is determined by starting with the size $N \times N$ of the whole matrix and the number of available worker nodes $n_w$. While $n_w \geq 2$, the work patch size is split in half, using alternating split dimensions, and $n_w$ is divided by two. This assumes that $N$ is a multiple of $n_w$.
+The work patch size is determined by starting with the size $N \times N$ of the whole matrix and the number of available worker nodes $n_w$. While $n_w \geq 2$, the work patch size is split in half, using alternating split dimensions, and $n_w$ is divided by two. This assumes that $N$ is a multiple of $n_w$.
 
 \paragraph{}
 To compute the result value $C_{x,y}$, the $x^{th}$ row of matrix $A$ and the $y^{th}$ column of matrix $B$ are needed.
