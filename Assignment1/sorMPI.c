@@ -64,7 +64,7 @@ main(int argc, char **argv)
   timeend = MPI_Wtime;
   if (glob->PRINT == 1) Print_Matrix();
   printf("\nNumber of iterations = %d\n", iter);
-  printf("\nCores: %d \nTime : %.4f\n", nprocT, end_time-start_time);
+  printf("\nCores: %d \nTime : %.4f\n", nprocT, timeend-timestart);
   MPI_Finalize();
   return 0;
 }
