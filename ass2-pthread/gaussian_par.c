@@ -96,7 +96,7 @@ void Eliminate(int inputRow, int outputRow)
 
     for (int j = inputRow+1; j < N; j++)
     {
-        A[outputRow][j] = A[outputRow][j] - A[outputRow][inputRow]*A[inputRow][j]; /* Elimination step */
+        A[outputRow][j] = A[outputRow][j] - A[outputRow][inputRow]*A[inputRow][j];
     }
     b[outputRow] = b[outputRow] - A[outputRow][inputRow]*y[inputRow];
     A[outputRow][inputRow] = 0.0;
@@ -107,7 +107,7 @@ void Division(int row)
 
     for (int j = row+1; j < N; j++)
     {
-        A[row][j] = A[row][j] / A[row][row]; /* Division step */
+        A[row][j] = A[row][j] / A[row][row];
     }
     y[row] = b[row] / A[row][row];
     A[row][row] = 1.0;
