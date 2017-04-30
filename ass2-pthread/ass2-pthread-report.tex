@@ -1,0 +1,58 @@
+\documentclass[]{article}
+
+\usepackage[top=2cm, bottom=2.5cm, left=2.0cm, right=2.0cm]{geometry}
+\usepackage{xcolor}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{appendix}
+\usepackage{placeins}
+
+\newlength{\xdim}
+
+\definecolor{calculate}{HTML}{D7191C}
+\definecolor{copyBack}{HTML}{FDAE61}
+
+%opening
+\title{Multiprocessor Systems - Assignment II (Pthread)}
+\author{Adrian Holfter, Lucie Labadie}
+
+\begin{document}
+
+\maketitle
+
+\section{How to run}
+
+\paragraph{} The archive contains a \emph{Makefile}. Running \texttt{make} in the directory will create a binary, \texttt{gaussian\_par}.
+
+\section{Implementation}
+
+\subsection{Pthread-based Gaussian parallelization}
+%TODO: read again
+
+\paragraph{} First of all the parallel implementation is row-wised, each processor as access to a determined number of row. Each processor is endorsed with one more row in turn. 
+
+\paragraph{} For each thread, as long as the previous rows did not pass the elimination step, the thread wait. Then it can eliminate for his own row using the previous one. After the elimination process, the thread takes care of the division. 
+
+\paragraph{} To know if a previous row finished its elimination, there is a table of bytes, as long as the number of row, containing flags (1 elimination step finished, 0 if not). As soon as the previous rows processed their elimination step, the thread can execute its own and the division. Then the corresponding case in the table of flags is changed from 0 to 1. All writing and reading in the flag table is protected by a mutex. 
+
+\paragraph{} For more details on the algorithm, see Algorithm \ref{} and \ref{} in Appendix B and C.
+
+\section{Measurements}
+
+The measurements were taken on the \emph{kraken.tek.bth.se} Server. The executables were compiled with the \texttt{-O2} option, to enable compiler optimizations. Every measurement was taken 10 times and the smallest value was used to account for background load and operating system caches.
+
+\subsection{Pthread-based Gaussian parallelization}
+
+
+
+\FloatBarrier
+\clearpage
+\newpage
+
+\begin{appendices}
+	%TODO: pseudo code? see after finishing part 1
+\end{appendices}
+
+\end{document}
