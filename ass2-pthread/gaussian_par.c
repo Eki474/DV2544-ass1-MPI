@@ -18,19 +18,6 @@
 
 typedef double matrix[MAX_SIZE][MAX_SIZE];
 
-typedef enum
-{
-    INIT_RAND,
-    INIT_FAST
-} MatrixInitMethod;
-
-typedef struct
-{
-    int offset;
-    int rows;
-    MatrixInitMethod method;
-} MatrixInitParams;
-
 typedef struct
 {
     int modulus;
@@ -91,9 +78,11 @@ void work(void)
     }
 }
 
+/* Elimination step: Using the result of the Division step for row *inputRow*,
+ * modify row *outputRow*
+ */
 void Eliminate(int inputRow, int outputRow)
 {
-
     for (int j = inputRow+1; j < N; j++)
     {
         A[outputRow][j] = A[outputRow][j] - A[outputRow][inputRow]*A[inputRow][j];
@@ -102,9 +91,9 @@ void Eliminate(int inputRow, int outputRow)
     A[outputRow][inputRow] = 0.0;
 }
 
+/* Division step: Requires all rows before *row* to have undergone division and elimination steps */
 void Division(int row)
 {
-
     for (int j = row+1; j < N; j++)
     {
         A[row][j] = A[row][j] / A[row][row];
@@ -113,10 +102,13 @@ void Division(int row)
     A[row][row] = 1.0;
 }
 
+/* Process a single row - this will read-access rows before this one and write-access only this row */
 void Process_Row(int row)
 {
+    // Processing of a row depends on the successful processing of all previous rows
     for (int i=0; i<row; i++)
     {
+        // Wait until the i-th row is processed
         pthread_mutex_lock(&globalCondMutex);
         while (!rowFinished[i])
         {
@@ -124,21 +116,22 @@ void Process_Row(int row)
         }
         pthread_mutex_unlock(&globalCondMutex);
 
+        // Elimination step using the i-th row
         Eliminate(i, row);
     }
 
+    // Division step
     Division(row);
 
-    pthread_mutex_lock(&globalCondMutex);
-
     // Mark this row as finished
+    pthread_mutex_lock(&globalCondMutex);
     rowFinished[row] = 1;
-    // Wake up other threads
+    // Wake up waiting threads threads as there is a new row finished
     pthread_cond_broadcast(&globalCond);
-
     pthread_mutex_unlock(&globalCondMutex);
 }
 
+/* Process rows in a cyclic manner */
 void *Thread_Work(void* dataPtr)
 {
     ThreadInitParams* params = (ThreadInitParams*)dataPtr;
