@@ -33,11 +33,17 @@
 
 \paragraph{} Based on the provided sequential implementation of gaussian elimination for linear equation systems, we created a parallelized version using \emph{pthread}.
 
-\paragraph{} The data distribution is done in a \emph{cyclic row-wise} manner, meaning that rows are assigned to processors using round-robin, rather than assigning blocks of rows to each processor. This is to account for the decreasing amount of work needed for rows further down in the equation system; in a block-wise fashion there would be a load imbalance. 
+\paragraph{} The data distribution is done in a \emph{cyclic row-wise} manner, meaning that rows are assigned to processors using round-robin, rather than assigning blocks of rows to each processor. This is to account for the decreasing amount of work needed for rows further down in the equation system; in a block-wise fashion there would be a load imbalance. The cyclic distribution is achieved by giving each thread an initial row offset and the total number of workers as step size.
 
-\paragraph{} For each thread, as long as the previous rows did not pass the elimination step, the thread wait. Then it can eliminate for his own row using the previous one. After the elimination process, the thread takes care of the division. 
+\paragraph{} We restructured the implementation a bit in a way that a thread will always be responsible for one row at a time. While doing the calculation work for one row, the thread may read values from other rows, but it will only write in the currently assigned row.
 
-\paragraph{} To know if a previous row finished its elimination, there is a table of bytes, as long as the number of row, containing flags (1 elimination step finished, 0 if not). As soon as the previous rows processed their elimination step, the thread can execute its own and the division. Then the corresponding case in the table of flags is changed from 0 to 1. All writing and reading in the flag table is protected by a mutex. 
+\paragraph{} \textbf{TODO this paragraph is horrible} Each thread will first carry out the elimination step for its row using each previous row. This requires all previous rows to have finished the division step. Once this is done, the division step will be carried out.
+
+\paragraph{} \textbf{TODO I tried to rewrite that paragraph (see above), but apparently failed} For each thread, as long as the previous rows did not pass the elimination step, the thread wait. Then it can eliminate for his own row using the previous one. After the elimination process, the thread takes care of the division.
+
+\paragraph{} To know if a previous row finished its elimination, there is a table containing a flag for every row ($1$ if division step is finished, $0$ if not). As soon as the previous rows processed their division step, a thread can execute the elimination step on its own row and then continue with the division. Then the corresponding flag in the table is changed from $0$ to $1$. All writing and reading in the flag table is protected by a mutex.
+
+\paragraph{} We used one global condition variable to implement the waiting for the completion of a row. As soon as a row is completely finished and the corresponding flag is set in the table, all waiting threads are woken up to re-evaluate their waiting condition (checking a flag in the flag table). This means that a waiting thread will be woken up by \emph{any} finished row, not only by the one it is waiting for. However, we thought this is still more elegant than having one condition variable per row.
 
 \paragraph{} For more details on the algorithm, see Algorithm \ref{} and \ref{} in Appendix B and C.
 
@@ -108,7 +114,7 @@ Table \ref{tab:gauss-runtime} shows the runtimes of the different versions of th
 
 As can be seen, we achieved a substantial speedup over the original single-threaded version.
 Interestingly, our implementation is also considerably faster when using only one core than the provided sequential version.
-This is most probably due to the changed order of computation: In the original version, after a division, the elimination step is carried out on all following rows. Then, the next division is carried out. In our implementation, the elimination of a row is done for all rows before it. After that, the division is done.
+This is most probably due to the changed order of computation: In the original version, after a division, the elimination step is carried out on all following rows. Then, the next division is carried out. In our implementation, the elimination of a row is done for all rows before it. After that, the division is done. So the order to dependent actions (division must be followed by elimination of subsequent rows) was kept and only the order of independent actions (order of eliminations) was changed.
 We assume that our approach is more cache-friendly than the original implementation.
 
 \FloatBarrier
