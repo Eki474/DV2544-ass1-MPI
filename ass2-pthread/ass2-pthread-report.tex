@@ -15,7 +15,7 @@
 \definecolor{copyBack}{HTML}{FDAE61}
 
 %opening
-\title{Multiprocessor Systems - Assignment II (Pthread)}
+\title{Multiprocessor Systems - Assignment II (pthread)}
 \author{Adrian Holfter, Lucie Labadie}
 
 \begin{document}
@@ -37,11 +37,9 @@
 
 \paragraph{} We restructured the implementation a bit in a way that a thread will always be responsible for one row at a time. While doing the calculation work for one row, the thread may read values from other rows, but it will only write in the currently assigned row.
 
-\paragraph{} \textbf{TODO this paragraph is horrible} Each thread will first carry out the elimination step for its row using each previous row. This requires all previous rows to have finished the division step. Once this is done, the division step will be carried out.
+\paragraph{} Each thread will first carry out the elimination step for its row using the division result of each of the previous rows. This requires all previous rows to have finished the division step. If this step is not done yet, the thread will wait. Once this is done, the division step will be carried out for the assigned row.
 
-\paragraph{} \textbf{TODO I tried to rewrite that paragraph (see above), but apparently failed} For each thread, as long as the previous rows did not pass the elimination step, the thread wait. Then it can eliminate for his own row using the previous one. After the elimination process, the thread takes care of the division.
-
-\paragraph{} To know if a previous row finished its elimination, there is a table containing a flag for every row ($1$ if division step is finished, $0$ if not). As soon as the previous rows processed their division step, a thread can execute the elimination step on its own row and then continue with the division. Then the corresponding flag in the table is changed from $0$ to $1$. All writing and reading in the flag table is protected by a mutex.
+\paragraph{} To know if a previous row finished its elimination, there is a global table containing a flag for every row ($1$ if division step is finished, $0$ if not). As soon as the division step is finished for the previous rows, a thread can execute the elimination step on its own row and then continue with the division. Then the corresponding flag in the table is changed from $0$ to $1$. All writing and reading in the flag table is protected by a mutex.
 
 \paragraph{} We used one global condition variable to implement the waiting for the completion of a row. As soon as a row is completely finished and the corresponding flag is set in the table, all waiting threads are woken up to re-evaluate their waiting condition (checking a flag in the flag table). This means that a waiting thread will be woken up by \emph{any} finished row, not only by the one it is waiting for. However, we thought this is still more elegant than having one condition variable per row.
 
@@ -51,7 +49,7 @@
 
 The measurements were taken on the \emph{kraken.tek.bth.se} Server. The executables were compiled with the \texttt{-O2} option, to enable compiler optimizations. Measurement was done using the bash-builtin \texttt{time} command. Every measurement was taken 10 times and the smallest value was used to account for background load and operating system caches.
 
-\subsection{Pthread-based Gaussian parallelization}
+\subsection{Pthread-based Gaussian elimination}
 
 Table \ref{tab:gauss-runtime} shows the runtimes of the different versions of the row-based gaussian elimination. Figure \ref{fig:gauss-chart} also visualizes this.
 
@@ -115,7 +113,7 @@ Table \ref{tab:gauss-runtime} shows the runtimes of the different versions of th
 As can be seen, we achieved a substantial speedup over the original single-threaded version.
 Interestingly, our implementation is also considerably faster when using only one core than the provided sequential version.
 This is most probably due to the changed order of computation: In the original version, after a division, the elimination step is carried out on all following rows. Then, the next division is carried out. In our implementation, the elimination of a row is done for all rows before it. After that, the division is done. So the order to dependent actions (division must be followed by elimination of subsequent rows) was kept and only the order of independent actions (order of eliminations) was changed.
-We assume that our approach is more cache-friendly than the original implementation.
+We assume that our execution order is more cache-friendly than the original implementation.
 
 \FloatBarrier
 \clearpage
