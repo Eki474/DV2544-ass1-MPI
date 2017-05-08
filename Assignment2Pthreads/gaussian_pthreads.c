@@ -52,7 +52,7 @@ void * work(void* id_T);
 int
 main(int argc, char **argv)
 {
-  int i, timestart, timeend, iter;
+  int i;
   unsigned int *id_T = NULL;
   pthread_t *pThread = NULL;
   char *flags;
