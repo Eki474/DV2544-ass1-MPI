@@ -2,9 +2,8 @@
 *
 * Gaussian elimination
 *
-* sequential version
+* Parallel version
 *
-* Chaos Communication Congress
 *****************************************************/
 #include <pthread.h>
 #include <stdio.h>
