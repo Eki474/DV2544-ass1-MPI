@@ -167,7 +167,7 @@ Init_Matrix()
   printf("\nNumber of Processors\t= %d ", nproc);
   printf("\nMaximum Value\t= %d \n", maxnum);
   printf("Init\t  = %s \n", Init);
-  printf("Initializing matrix...");
+  printf("Initializing matrix...\n");
 
   if (strcmp(Init,"rand") == 0) {
     for (i = 0; i < N; i++){
