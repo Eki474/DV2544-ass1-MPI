@@ -4,7 +4,21 @@
 *
 * Parallel version
 *
+* Author(s) : Rosen Sasov, Mohit Vellanki
+*
 *****************************************************/
+
+
+/*  INFORMATION FOR COMPILING AND EXECUTING
+*
+* To Compile use :
+* gcc gaussian_pthreads.c -o [name of executable] -pthread
+* To Run use :
+* [name of executable] -n [number of cores] -N [size of matrix] -P [Print mode : 0-off/ 1-on]
+* Values by default : Check Init_Default function
+*
+*/
+
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -228,8 +242,8 @@ Print_Matrix()
 void
 Init_Default()
 {
-  N = 4;
-  nproc = 4;
+  N = 2048;
+  nproc = 8;
   Init = "rand";
   maxnum = 15.0;
   PRINT = 0;
