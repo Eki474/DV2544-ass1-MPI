@@ -2,36 +2,42 @@
  *
  * Gaussian elimination
  *
- * sequential version
+ * parallel version
  *
  *****************************************************/
 
 #include <stdio.h>
+#include <omp.h>
+#include <assert.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
 
 #define MAX_SIZE 4096
+#define MAX_WORKERS 128
 
 typedef double matrix[MAX_SIZE][MAX_SIZE];
 
 int	N;		/* matrix size		*/
+int numWorkers; /* number of workers ( = threads ) */
 int	maxnum;		/* max number of element*/
 char	*Init;		/* matrix init type	*/
 int	PRINT;		/* print switch		*/
 matrix	A;		/* matrix A		*/
 double	b[MAX_SIZE];	/* vector b             */
 double	y[MAX_SIZE];	/* vector y             */
+static uint8_t rowFinished[MAX_SIZE];  /* Array containing binary flag if each row is finished */
 
 /* forward declarations */
 void work(void);
 void Init_Matrix(void);
 void Print_Matrix(void);
 void Init_Default(void);
-int Read_Options(int, char **);
+void Read_Options(int, char **);
+void *Thread_Work(void *dataPtr);
 
-int 
-main(int argc, char **argv)
+int  main(int argc, char **argv)
 {
-    int i, timestart, timeend, iter;
- 
     Init_Default();		/* Init default values	*/
     Read_Options(argc,argv);	/* Read arguments	*/
     Init_Matrix();		/* Init the matrix	*/
@@ -40,70 +46,110 @@ main(int argc, char **argv)
 	Print_Matrix();
 }
 
-void
-work(void)
+void work()
 {
-    int i, j, k;
-
-    /* Gaussian elimination algorithm, Algo 8.4 from Grama */
-    for (k = 0; k < N; k++) { /* Outer loop */
-	for (j = k+1; j < N; j++)
-	    A[k][j] = A[k][j] / A[k][k]; /* Division step */
-	y[k] = b[k] / A[k][k];
-	A[k][k] = 1.0;
-	for (i = k+1; i < N; i++) {
-	    for (j = k+1; j < N; j++)
-		A[i][j] = A[i][j] - A[i][k]*A[k][j]; /* Elimination step */
-	    b[i] = b[i] - A[i][k]*y[k];
-	    A[i][k] = 0.0;
+#pragma omp parallel for schedule(static, 1)
+    for(int i = 0; i<N; i++)
+	{
+		Process_Row(i);
 	}
-    }
 }
 
-void
-Init_Matrix()
+/* Elimination step: Using the result of the Division step for row *inputRow*,
+ * modify row *outputRow*
+ */
+void Eliminate(int inputRow, int outputRow)
+{
+    for (int j = inputRow+1; j < N; j++)
+    {
+        A[outputRow][j] = A[outputRow][j] - A[outputRow][inputRow]*A[inputRow][j];
+    }
+    b[outputRow] = b[outputRow] - A[outputRow][inputRow]*y[inputRow];
+    A[outputRow][inputRow] = 0.0;
+}
+
+/* Division step: Requires all rows before *row* to have undergone division and elimination steps */
+void Division(int row)
+{
+    for (int j = row+1; j < N; j++)
+    {
+        A[row][j] = A[row][j] / A[row][row];
+    }
+    y[row] = b[row] / A[row][row];
+    A[row][row] = 1.0;
+}
+
+/* Process a single row - this will read-access rows before this one and write-access only this row */
+void Process_Row(int row)
+{
+    // Processing of a row depends on the successful processing of all previous rows
+    for (int i=0; i<row; i++)
+    {
+        // Wait until the i-th row is processed
+        pthread_mutex_lock(&globalCondMutex);
+        while (!rowFinished[i])
+        {
+            pthread_cond_wait(&globalCond, &globalCondMutex);
+        }
+        pthread_mutex_unlock(&globalCondMutex);
+
+        // Elimination step using the i-th row
+        Eliminate(i, row);
+    }
+
+    // Division step
+    Division(row);
+
+    // Mark this row as finished
+    pthread_mutex_lock(&globalCondMutex);
+    rowFinished[row] = 1;
+    // Wake up waiting threads threads as there is a new row finished
+    pthread_cond_broadcast(&globalCond);
+    pthread_mutex_unlock(&globalCondMutex);
+}
+
+void Init_Matrix()
 {
     int i, j;
- 
+
     printf("\nsize      = %dx%d ", N, N);
     printf("\nmaxnum    = %d \n", maxnum);
     printf("Init	  = %s \n", Init);
     printf("Initializing matrix...");
- 
+
     if (strcmp(Init,"rand") == 0) {
-	for (i = 0; i < N; i++){
-	    for (j = 0; j < N; j++) {
-		if (i == j) /* diagonal dominance */
-		    A[i][j] = (double)(rand() % maxnum) + 5.0;
-		else
-		    A[i][j] = (double)(rand() % maxnum) + 1.0;
-	    }
-	}
+    for (i = 0; i < N; i++){
+        for (j = 0; j < N; j++) {
+        if (i == j) /* diagonal dominance */
+            A[i][j] = (double)(rand() % maxnum) + 5.0;
+        else
+            A[i][j] = (double)(rand() % maxnum) + 1.0;
+        }
+    }
     }
     if (strcmp(Init,"fast") == 0) {
-	for (i = 0; i < N; i++) {
-	    for (j = 0; j < N; j++) {
-		if (i == j) /* diagonal dominance */
-		    A[i][j] = 5.0;
-		else
-		    A[i][j] = 2.0;
-	    }
-	}
+    for (i = 0; i < N; i++) {
+        for (j = 0; j < N; j++) {
+        if (i == j) /* diagonal dominance */
+            A[i][j] = 5.0;
+        else
+            A[i][j] = 2.0;
+        }
+    }
     }
 
     /* Initialize vectors b and y */
     for (i = 0; i < N; i++) {
-	b[i] = 2.0;
-	y[i] = 1.0;
+    b[i] = 2.0;
+    y[i] = 1.0;
     }
 
     printf("done \n\n");
     if (PRINT == 1)
-	Print_Matrix();
+    Print_Matrix();
 }
 
-void
-Print_Matrix()
+void Print_Matrix()
 {
     int i, j;
  
@@ -125,17 +171,16 @@ Print_Matrix()
     printf("\n\n");
 }
 
-void 
-Init_Default()
+void Init_Default()
 {
     N = 2048;
+    numWorkers = 1;
     Init = "rand";
     maxnum = 15.0;
     PRINT = 0;
 }
  
-int
-Read_Options(int argc, char **argv)
+void Read_Options(int argc, char **argv)
 {
     char    *prog;
  
@@ -158,6 +203,7 @@ Read_Options(int argc, char **argv)
 		printf("           [-I init_type] fast/rand \n");
 		printf("           [-m maxnum] max random no \n");
 		printf("           [-P print_switch] 0/1 \n");
+        printf("           [-w workers] worker count \n");
 		exit(0);
 		break;
 	    case 'D':
@@ -179,6 +225,10 @@ Read_Options(int argc, char **argv)
 		--argc;
 		PRINT = atoi(*++argv);
 		break;
+        case 'w':
+        --argc;
+        numWorkers = atoi(*++argv);
+        break;
 	    default:
 		printf("%s: ignored option: -%s\n", prog, *argv);
 		printf("HELP: try %s -u \n\n", prog);
