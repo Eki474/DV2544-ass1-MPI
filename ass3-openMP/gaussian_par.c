@@ -7,7 +7,7 @@
  *****************************************************/
 
 #include <stdio.h>
-#include <omp.h>
+#include <pthread.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,6 +18,11 @@
 
 typedef double matrix[MAX_SIZE][MAX_SIZE];
 
+typedef struct
+{
+    int modulus;
+} ThreadInitParams;
+
 int	N;		/* matrix size		*/
 int numWorkers; /* number of workers ( = threads ) */
 int	maxnum;		/* max number of element*/
@@ -27,6 +32,8 @@ matrix	A;		/* matrix A		*/
 double	b[MAX_SIZE];	/* vector b             */
 double	y[MAX_SIZE];	/* vector y             */
 static uint8_t rowFinished[MAX_SIZE];  /* Array containing binary flag if each row is finished */
+pthread_cond_t globalCond = PTHREAD_COND_INITIALIZER; /* Global condition variable */
+pthread_mutex_t globalCondMutex = PTHREAD_MUTEX_INITIALIZER; /* Mutex to guard the condition variable */
 
 /* forward declarations */
 void work(void);
@@ -46,13 +53,29 @@ int  main(int argc, char **argv)
 	Print_Matrix();
 }
 
-void work()
+void work(void)
 {
-#pragma omp parallel for schedule(static, 1)
-    for(int i = 0; i<N; i++)
-	{
-		Process_Row(i);
-	}
+    assert(N % numWorkers == 0);
+
+    pthread_t threads[MAX_WORKERS];
+    ThreadInitParams initParams[MAX_WORKERS];
+
+    // Spawn threads
+    for (int worker = 1; worker < numWorkers; worker++)
+    {
+        initParams[worker].modulus = worker;
+        pthread_create(&threads[worker], NULL, &Thread_Work, &initParams[worker]);
+    }
+
+    // Do work
+    initParams[0].modulus = 0;
+    Thread_Work(&initParams[0]);
+
+    // Join threads
+    for (int worker = 1; worker < numWorkers; worker++)
+    {
+        pthread_join(threads[worker], NULL);
+    }
 }
 
 /* Elimination step: Using the result of the Division step for row *inputRow*,
@@ -106,6 +129,18 @@ void Process_Row(int row)
     // Wake up waiting threads threads as there is a new row finished
     pthread_cond_broadcast(&globalCond);
     pthread_mutex_unlock(&globalCondMutex);
+}
+
+/* Process rows in a cyclic manner */
+void *Thread_Work(void* dataPtr)
+{
+    ThreadInitParams* params = (ThreadInitParams*)dataPtr;
+
+    for (int row=params->modulus; row < N; row += numWorkers)
+    {
+        Process_Row(row);
+    }
+    return NULL;
 }
 
 void Init_Matrix()
