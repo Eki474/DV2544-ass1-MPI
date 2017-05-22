@@ -7,7 +7,6 @@
  *****************************************************/
 
 #include <stdio.h>
-#include <pthread.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,11 +17,6 @@
 
 typedef double matrix[MAX_SIZE][MAX_SIZE];
 
-typedef struct
-{
-    int modulus;
-} ThreadInitParams;
-
 int	N;		/* matrix size		*/
 int numWorkers; /* number of workers ( = threads ) */
 int	maxnum;		/* max number of element*/
@@ -32,16 +26,14 @@ matrix	A;		/* matrix A		*/
 double	b[MAX_SIZE];	/* vector b             */
 double	y[MAX_SIZE];	/* vector y             */
 static uint8_t rowFinished[MAX_SIZE];  /* Array containing binary flag if each row is finished */
-pthread_cond_t globalCond = PTHREAD_COND_INITIALIZER; /* Global condition variable */
-pthread_mutex_t globalCondMutex = PTHREAD_MUTEX_INITIALIZER; /* Mutex to guard the condition variable */
 
 /* forward declarations */
 void work(void);
 void Init_Matrix(void);
 void Print_Matrix(void);
 void Init_Default(void);
+void Process_Row(int row);
 void Read_Options(int, char **);
-void *Thread_Work(void *dataPtr);
 
 int  main(int argc, char **argv)
 {
@@ -55,27 +47,9 @@ int  main(int argc, char **argv)
 
 void work(void)
 {
-    assert(N % numWorkers == 0);
-
-    pthread_t threads[MAX_WORKERS];
-    ThreadInitParams initParams[MAX_WORKERS];
-
-    // Spawn threads
-    for (int worker = 1; worker < numWorkers; worker++)
-    {
-        initParams[worker].modulus = worker;
-        pthread_create(&threads[worker], NULL, &Thread_Work, &initParams[worker]);
-    }
-
-    // Do work
-    initParams[0].modulus = 0;
-    Thread_Work(&initParams[0]);
-
-    // Join threads
-    for (int worker = 1; worker < numWorkers; worker++)
-    {
-        pthread_join(threads[worker], NULL);
-    }
+	#pragma omp parallel for
+    for(int i = 0; i<N; i++)
+		Process_Row(i);
 }
 
 /* Elimination step: Using the result of the Division step for row *inputRow*,
@@ -109,12 +83,7 @@ void Process_Row(int row)
     for (int i=0; i<row; i++)
     {
         // Wait until the i-th row is processed
-        pthread_mutex_lock(&globalCondMutex);
-        while (!rowFinished[i])
-        {
-            pthread_cond_wait(&globalCond, &globalCondMutex);
-        }
-        pthread_mutex_unlock(&globalCondMutex);
+        while (!rowFinished[i]){}
 
         // Elimination step using the i-th row
         Eliminate(i, row);
@@ -124,23 +93,9 @@ void Process_Row(int row)
     Division(row);
 
     // Mark this row as finished
-    pthread_mutex_lock(&globalCondMutex);
+	//#pragma omp atomic
     rowFinished[row] = 1;
     // Wake up waiting threads threads as there is a new row finished
-    pthread_cond_broadcast(&globalCond);
-    pthread_mutex_unlock(&globalCondMutex);
-}
-
-/* Process rows in a cyclic manner */
-void *Thread_Work(void* dataPtr)
-{
-    ThreadInitParams* params = (ThreadInitParams*)dataPtr;
-
-    for (int row=params->modulus; row < N; row += numWorkers)
-    {
-        Process_Row(row);
-    }
-    return NULL;
 }
 
 void Init_Matrix()
