@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <omp.h>
 
 #define KILO (1024)
 #define MEGA (1024*1024)
@@ -50,14 +51,23 @@ partition(int *v, unsigned low, unsigned high, unsigned pivot_index)
      * v[i] for i greater than high are greater than pivot
      */
 
-    /* move elements into place */
-    while (low <= high) {
-        if (v[low] <= v[pivot_index])
-            low++;
-        else if (v[high] > v[pivot_index])
-            high--;
-        else
-            swap(v, low, high);
+    int work_size = high-low;
+
+#pragma omp parallel if(work_size > 16)
+    {
+        int team_size = omp_get_num_threads();
+        int my_id = omp_get_thread_num();
+        int chunk_size = work_size/team_size;
+        int local_low = low + my_id*chunk_size;
+        int local_high = local_low + chunk_size;
+        /* move elements into place */
+        while (low <= high) {
+            if (v[low] <= v[pivot_index])
+                low++;
+            else if (v[high] > v[pivot_index])
+                high--;
+            else swap(v, low, high);
+        }
     }
 
     /* put pivot back between two groups */
@@ -80,12 +90,13 @@ quick_sort(int *v, unsigned low, unsigned high)
 
     /* partition the vector */
     pivot_index = partition(v, low, high, pivot_index);
-
-    /* sort the two sub arrays */
-    if (low < pivot_index)
-        quick_sort(v, low, pivot_index-1);
-    if (pivot_index < high)
-        quick_sort(v, pivot_index+1, high);
+    {
+        /* sort the two sub arrays */
+        if (low < pivot_index)
+            quick_sort(v, low, pivot_index - 1);
+        if (pivot_index < high)
+            quick_sort(v, pivot_index + 1, high);
+    }
 }
 
 int

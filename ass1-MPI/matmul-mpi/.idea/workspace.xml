@@ -11,7 +11,7 @@
   <component name="ChangeListManager">
     <list default="true" id="6604d642-2aeb-4f2b-8ee5-bc9fe21ffa79" name="Default" comment="">
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../ass3-openMP/gaussian_par.c" afterPath="$PROJECT_DIR$/../../ass3-openMP/gaussian_par.c" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../ass3-openMP/qsort_par.c" afterPath="$PROJECT_DIR$/../../ass3-openMP/qsort_par.c" />
     </list>
     <ignored path="$PROJECT_DIR$/cmake-build-debug/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -34,22 +34,17 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="gaussian_par2.c" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/../../ass3-openMP/gaussian_par2.c">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="198">
-              <caret line="53" column="30" lean-forward="true" selection-start-line="53" selection-start-column="30" selection-end-line="53" selection-end-column="30" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="gaussian_par.c" pinned="false" current-in-tab="true">
+      <file leaf-file-name="gaussian_par.c" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/../../ass3-openMP/gaussian_par.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="306">
-              <caret line="95" column="6" lean-forward="false" selection-start-line="95" selection-start-column="6" selection-end-line="95" selection-end-column="6" />
-              <folding />
+            <state relative-caret-position="180">
+              <caret line="97" column="6" lean-forward="false" selection-start-line="97" selection-start-column="6" selection-end-line="97" selection-end-column="6" />
+              <folding>
+                <marker date="1495466023199" expanded="true" signature="2596:2598" ph="{...}" />
+                <marker date="1495466023199" expanded="true" signature="2619:3492" ph="{...}" />
+                <marker date="1495466023199" expanded="true" signature="3514:3906" ph="{...}" />
+                <marker date="1495466023199" expanded="true" signature="3928:4018" ph="{...}" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -57,8 +52,18 @@
       <file leaf-file-name="qsort_seq.c" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/../../ass3-openMP/qsort_seq.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="0">
-              <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+            <state relative-caret-position="126">
+              <caret line="7" column="19" lean-forward="false" selection-start-line="7" selection-start-column="19" selection-end-line="7" selection-end-column="19" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="qsort_par.c" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/../../ass3-openMP/qsort_par.c">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="322">
+              <caret line="61" column="48" lean-forward="true" selection-start-line="61" selection-start-column="48" selection-end-line="61" selection-end-column="48" />
               <folding />
             </state>
           </provider>
@@ -89,6 +94,8 @@
         <option value="$PROJECT_DIR$/../laplace_sor_mpi.c" />
         <option value="$PROJECT_DIR$/../../ass3-openMP/gaussian_par2.c" />
         <option value="$PROJECT_DIR$/../../ass3-openMP/gaussian_par.c" />
+        <option value="$PROJECT_DIR$/../../ass3-openMP/qsort_seq.c" />
+        <option value="$PROJECT_DIR$/../../ass3-openMP/qsort_par.c" />
       </list>
     </option>
   </component>
@@ -145,7 +152,7 @@
   </component>
   <component name="PropertiesComponent">
     <property name="WebServerToolWindowFactoryState" value="false" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../../ass3-openMP/gaussian_par2.c" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../../ass3-openMP/qsort_par.c" />
   </component>
   <component name="RunDashboard">
     <option name="ruleStates">
@@ -374,7 +381,7 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="24152000" />
+    <option name="totallyTimeSpent" value="28443000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="0" y="27" width="1366" height="741" extended-state="6" />
@@ -382,7 +389,7 @@
     <layout>
       <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.16251831" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="6" side_tool="false" content_ui="tabs" />
-      <window_info id="CMake" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.34028894" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="CMake" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.085072234" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
@@ -424,20 +431,6 @@
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/../matrix_mult_mpi.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2844">
-          <caret line="158" column="19" lean-forward="true" selection-start-line="158" selection-start-column="4" selection-end-line="158" selection-end-column="19" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/../laplace_sor_seq.c">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3834">
-          <caret line="213" column="16" lean-forward="true" selection-start-line="213" selection-start-column="16" selection-end-line="213" selection-end-column="16" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/../laplace_sor_mpi.c">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="4590">
@@ -740,9 +733,14 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/../../ass3-openMP/gaussian_par.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="306">
-          <caret line="95" column="6" lean-forward="false" selection-start-line="95" selection-start-column="6" selection-end-line="95" selection-end-column="6" />
-          <folding />
+        <state relative-caret-position="180">
+          <caret line="97" column="6" lean-forward="false" selection-start-line="97" selection-start-column="6" selection-end-line="97" selection-end-column="6" />
+          <folding>
+            <marker date="1495466023199" expanded="true" signature="2596:2598" ph="{...}" />
+            <marker date="1495466023199" expanded="true" signature="2619:3492" ph="{...}" />
+            <marker date="1495466023199" expanded="true" signature="3514:3906" ph="{...}" />
+            <marker date="1495466023199" expanded="true" signature="3928:4018" ph="{...}" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -750,6 +748,22 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="198">
           <caret line="53" column="30" lean-forward="true" selection-start-line="53" selection-start-column="30" selection-end-line="53" selection-end-column="30" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../ass3-openMP/qsort_seq.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="126">
+          <caret line="7" column="19" lean-forward="false" selection-start-line="7" selection-start-column="19" selection-end-line="7" selection-end-column="19" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../ass3-openMP/qsort_par.c">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="322">
+          <caret line="61" column="48" lean-forward="true" selection-start-line="61" selection-start-column="48" selection-end-line="61" selection-end-column="48" />
           <folding />
         </state>
       </provider>
