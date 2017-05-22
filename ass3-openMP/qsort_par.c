@@ -53,21 +53,27 @@ partition(int *v, unsigned low, unsigned high, unsigned pivot_index)
 
     int work_size = high-low;
 
-#pragma omp parallel if(work_size > 16)
+    #pragma omp parallel if(work_size > 16)
     {
+        /* Determine work chunk position */
         int team_size = omp_get_num_threads();
         int my_id = omp_get_thread_num();
         int chunk_size = work_size/team_size;
         int local_low = low + my_id*chunk_size;
         int local_high = local_low + chunk_size;
+        if (my_id == team_size - 1)
+            local_high = high;
+
         /* move elements into place */
-        while (low <= high) {
-            if (v[low] <= v[pivot_index])
-                low++;
-            else if (v[high] > v[pivot_index])
-                high--;
-            else swap(v, low, high);
+        while (local_low <= local_high) {
+            if (v[local_low] <= v[pivot_index])
+                local_low++;
+            else if (v[local_high] > v[pivot_index])
+                local_high--;
+            else swap(v, local_low, local_high);
         }
+
+        /* Copy back elements */
     }
 
     /* put pivot back between two groups */
