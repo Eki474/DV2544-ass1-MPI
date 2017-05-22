@@ -29,7 +29,6 @@
 \section{Implementation}
 
 \subsection{Pthread-based Gaussian parallelization}
-%TODO: read again
 
 \paragraph{} Based on the provided sequential implementation of gaussian elimination for linear equation systems, we created a parallelized version using \emph{pthread}.
 
@@ -42,8 +41,6 @@
 \paragraph{} To know if a previous row finished its elimination, there is a global table containing a flag for every row ($1$ if division step is finished, $0$ if not). As soon as the division step is finished for the previous rows, a thread can execute the elimination step on its own row and then continue with the division. Then the corresponding flag in the table is changed from $0$ to $1$. All writing and reading in the flag table is protected by a mutex.
 
 \paragraph{} We used one global condition variable to implement the waiting for the completion of a row. As soon as a row is completely finished and the corresponding flag is set in the table, all waiting threads are woken up to re-evaluate their waiting condition (checking a flag in the flag table). This means that a waiting thread will be woken up by \emph{any} finished row, not only by the one it is waiting for. However, we thought this is still more elegant than having one condition variable per row.
-
-\paragraph{} For more details on the algorithm, see Algorithm \ref{} and \ref{} in Appendix B and C.
 
 \section{Measurements}
 
@@ -114,13 +111,5 @@ As can be seen, we achieved a substantial speedup over the original single-threa
 Interestingly, our implementation is also considerably faster when using only one core than the provided sequential version.
 This is most probably due to the changed order of computation: In the original version, after a division, the elimination step is carried out on all following rows. Then, the next division is carried out. In our implementation, the elimination of a row is done for all rows before it. After that, the division is done. So the order to dependent actions (division must be followed by elimination of subsequent rows) was kept and only the order of independent actions (order of eliminations) was changed.
 We assume that our execution order is more cache-friendly than the original implementation.
-
-\FloatBarrier
-\clearpage
-\newpage
-
-\begin{appendices}
-	%TODO: pseudo code? see after finishing part 1
-\end{appendices}
 
 \end{document}
