@@ -87,12 +87,12 @@ quick_sort(int *v, unsigned low, unsigned high)
     /* sort the two sub arrays */
     if (low < pivot_index)
     {
-#pragma omp task final(size<min_par_size) mergeable
+        #pragma omp task final(size<min_par_size) mergeable
         quick_sort(v, low, pivot_index-1);
     }
     if (pivot_index < high)
     {
-#pragma omp task final(size<min_par_size) mergeable
+        #pragma omp task final(size<min_par_size) mergeable
         quick_sort(v, pivot_index+1, high);
     }
 }
@@ -102,9 +102,9 @@ main(int argc, char **argv)
 {
     init_array();
     //print_array();
-#pragma omp parallel
+    #pragma omp parallel
     {
-#pragma omp single nowait
+        #pragma omp single nowait
         {
             quick_sort(v, 0, MAX_ITEMS-1);
         }
