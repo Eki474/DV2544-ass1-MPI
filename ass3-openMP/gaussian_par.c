@@ -47,7 +47,7 @@ int  main(int argc, char **argv)
 
 void work(void)
 {
-	#pragma omp parallel for
+    #pragma omp parallel for schedule(static, 1) shared(rowFinished, A, b, y)
     for(int i = 0; i<N; i++)
 		Process_Row(i);
 }
@@ -83,7 +83,9 @@ void Process_Row(int row)
     for (int i=0; i<row; i++)
     {
         // Wait until the i-th row is processed
-        while (!rowFinished[i]){}
+        while (!rowFinished[i]){
+            #pragma omp flush(rowFinished)
+        }
 
         // Elimination step using the i-th row
         Eliminate(i, row);
@@ -93,9 +95,8 @@ void Process_Row(int row)
     Division(row);
 
     // Mark this row as finished
-	//#pragma omp atomic
     rowFinished[row] = 1;
-    // Wake up waiting threads threads as there is a new row finished
+    #pragma omp flush(rowFinished)
 }
 
 void Init_Matrix()
