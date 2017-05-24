@@ -30,7 +30,7 @@
 
 \subsection{OpenMP-based Quicksort}
 
-\paragraph{} We decided to parallelize the recursive calls to \texttt{quick\_sort} by creating \texttt{task}s for each call. This means that the first call to \texttt{quick\_sort} is running on only one thread. The subsequent two recursive calls are then added to the task pool and can then be executed asynchronously in parallel. Since every call to \texttt{quick\_sort} will call itself recursively two times, full utilization of e.g. eight processor cores will be reached by the fourth iteration.
+\paragraph{} We decided to parallelize the recursive calls to \texttt{quick\_sort} by creating \texttt{task}s for each call. This means that the first call to \texttt{quick\_sort} is running on only one thread. The subsequent two recursive calls are then added to the task pool and can be executed asynchronously in parallel. Since every call to \texttt{quick\_sort} will call itself recursively two times, full utilization of e.g. eight processor cores will be reached by the fourth iteration.
 
 \paragraph{} The \texttt{parallel} region is created in the very beginning in the \texttt{main} function and contains immediately a \texttt{single} region in order to only start \texttt{quick\_sort} once and have the other spawned threads waiting for incoming tasks. Putting the \texttt{parallel} region inside \texttt{quick\_sort} would create nested regions (through recursion), which we don't need. Similarly, putting the \texttt{single} region inside the \texttt{quick\_sort} function would force serialization of the whole process and thus limit execution to two cores.
 
