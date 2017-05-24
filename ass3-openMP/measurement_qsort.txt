@@ -1,0 +1,23 @@
+
+sequential
+real	0m18.543s
+real	0m18.582s
+real	0m18.544s
+real	0m18.542s
+real	0m18.542s
+real	0m18.543s
+real	0m18.543s
+real	0m18.542s
+real	0m18.544s
+real	0m18.544s
+OpenMP
+real	0m4.397s
+real	0m4.180s
+real	0m4.161s
+real	0m4.349s
+real	0m4.374s
+real	0m4.373s
+real	0m4.346s
+real	0m4.386s
+real	0m4.214s
+real	0m4.191s

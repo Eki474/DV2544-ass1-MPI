@@ -1,0 +1,22 @@
+
+real	0m11.399s
+real	0m11.402s
+real	0m11.411s
+real	0m11.402s
+real	0m11.382s
+real	0m11.403s
+real	0m11.394s
+real	0m11.401s
+real	0m11.392s
+real	0m11.403s
+OpenMP
+real	0m2.051s
+real	0m2.277s
+real	0m2.768s
+real	0m3.380s
+real	0m1.931s
+real	0m1.919s
+real	0m2.416s
+real	0m2.214s
+real	0m2.737s
+real	0m2.677s
